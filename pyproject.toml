@@ -1,0 +1,23 @@
+[project]
+name = "nano_utils_yaronday"
+version = "0.0.1"
+authors = [
+  { name="Yaron Dayan", email="yaronday77@gmail.com" },
+]
+description = "A tiny utility package for various development projects."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICENSE"]
+
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project.urls]
+Homepage = "https://github.com/yaronday/nano_utils"
+Issues = "https://github.com/yaronday/nano_utils/issues"

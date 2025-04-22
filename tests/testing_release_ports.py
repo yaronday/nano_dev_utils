@@ -1,21 +1,21 @@
 import unittest
 from unittest.mock import patch, call
 import logging
-from src.nano_utils_yaronday import release_ports
+from src.nano_utils_yaronday import release_ports as rp
 
-PROXY_SERVER = release_ports.PROXY_SERVER
-CLIENT_PORT = release_ports.INSPECTOR_CLIENT
+PROXY_SERVER = rp.PROXY_SERVER
+CLIENT_PORT = rp.INSPECTOR_CLIENT
 
 
 class TestPortsRelease(unittest.TestCase):
 
     def setUp(self):
-        self.ports_release = release_ports.PortsRelease()
+        self.ports_release = rp.PortsRelease()
         self.mock_logger = unittest.mock.MagicMock(spec=logging.Logger)
 
         self.remove_file_handlers()
 
-        patch.object(release_ports, 'lgr', self.mock_logger).start()
+        patch.object(rp, 'lgr', self.mock_logger).start()
         self.addCleanup(patch.stopall)
 
     @staticmethod
@@ -105,7 +105,8 @@ class TestPortsRelease(unittest.TestCase):
                 mock_popen.return_value = mock_process
                 pid = self.ports_release.get_pid_by_port(80)
                 self.assertIsNone(pid)
-                self.mock_logger.error.assert_called_once_with("Error running command: Error occurred")
+                self.mock_logger.error.assert_called_once_with("Error running "
+                                                               "command: Error occurred")
 
     def test_get_pid_by_port_parse_error(self):
         with patch('platform.system', return_value='Linux'):
@@ -132,7 +133,8 @@ class TestPortsRelease(unittest.TestCase):
             with patch('subprocess.Popen', side_effect=Exception("Unexpected")):
                 pid = self.ports_release.get_pid_by_port(1234)
                 self.assertIsNone(pid)
-                self.mock_logger.error.assert_called_once_with("An unexpected error occurred: Unexpected")
+                self.mock_logger.error.assert_called_once_with("An unexpected "
+                                                               "error occurred: Unexpected")
 
     def test_kill_process_success(self):
         with patch('platform.system', return_value='Linux'):
@@ -173,12 +175,11 @@ class TestPortsRelease(unittest.TestCase):
                 result = self.ports_release.kill_process(4321)
                 self.assertFalse(result)
                 self.mock_logger.error.assert_called_once_with("An unexpected "
-                                                               "error occurred: Another error")
+                                                               "error occurred: "
+                                                               "Another error")
                 
-    @patch('testing_release_ports.'
-           'release_ports.PortsRelease.get_pid_by_port')
-    @patch('testing_release_ports.'
-           'release_ports.PortsRelease.kill_process')
+    @patch('testing_release_ports.rp.PortsRelease.get_pid_by_port')
+    @patch('testing_release_ports.rp.PortsRelease.kill_process')
     def test_release_all_default_ports_success(self, mock_kill, mock_get_pid):
         mock_get_pid.side_effect = [1111, 2222]
         mock_kill.side_effect = [True, True]
@@ -187,14 +188,20 @@ class TestPortsRelease(unittest.TestCase):
         mock_kill.assert_has_calls([call(1111), call(2222)])
         self.assertEqual(mock_get_pid.call_count, 2)
         self.assertEqual(mock_kill.call_count, 2)
-        self.mock_logger.info.assert_any_call(f"Process ID (PID) found for port {PROXY_SERVER}: 1111")
-        self.mock_logger.info.assert_any_call(f"Process {1111} (on port {PROXY_SERVER}) killed successfully.")
-        self.mock_logger.info.assert_any_call(f"Process ID (PID) found for port {CLIENT_PORT}: 2222")
-        self.mock_logger.info.assert_any_call(f"Process {2222} (on port {CLIENT_PORT}) killed successfully.")
+        self.mock_logger.info.assert_any_call(f"Process ID (PID) found for "
+                                              f"port {PROXY_SERVER}: 1111")
+        self.mock_logger.info.assert_any_call(f"Process {1111} (on port "
+                                              f"{PROXY_SERVER}) "
+                                              f"killed successfully.")
+        self.mock_logger.info.assert_any_call(f"Process ID (PID) "
+                                              f"found for port {CLIENT_PORT}: "
+                                              f"2222")
+        self.mock_logger.info.assert_any_call(f"Process {2222} (on port "
+                                              f"{CLIENT_PORT}) killed successfully.")
 
     def test_release_all_invalid_port(self):
-        with patch('testing_release_ports.release_ports.PortsRelease.get_pid_by_port') as mock_get_pid:
-            with patch('testing_release_ports.release_ports.PortsRelease.kill_process') as mock_kill:
+        with patch('testing_release_ports.rp.PortsRelease.get_pid_by_port') as mock_get_pid:
+            with patch('testing_release_ports.rp.PortsRelease.kill_process') as mock_kill:
                 # Make get_pid_by_port return None for the valid ports in this test
                 mock_get_pid.side_effect = [None, None]
                 self.ports_release.release_all(ports=[1234, "invalid", 5678])
@@ -202,11 +209,13 @@ class TestPortsRelease(unittest.TestCase):
                 mock_get_pid.assert_any_call(5678)
                 self.assertEqual(mock_get_pid.call_count, 2)
                 mock_kill.assert_not_called()
-                self.mock_logger.error.assert_called_once_with("Invalid port number: invalid. Skipping.")
+                self.mock_logger.error.assert_called_once_with("Invalid port "
+                                                               "number: invalid."
+                                                               " Skipping.")
 
     def test_release_all_unexpected_exception(self):
         with patch('testing_release_ports.'
-                   'release_ports.PortsRelease.get_pid_by_port',
+                   'rp.PortsRelease.get_pid_by_port',
                    side_effect=Exception("Release all error")):
             self.ports_release.release_all(ports=[9010])
             self.mock_logger.error.assert_called_once_with("An unexpected error "

@@ -29,10 +29,12 @@ class PortsRelease:
                 "Darwin": f"lsof -i :{port}",
             }.get(platform.system())
             if not cmd:
-                lgr.error(f"Unsupported operating system: {platform.system()}")
+                lgr.error(f"Unsupported OS: {platform.system()}")
                 return None
 
-            process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process = subprocess.Popen(cmd, shell=True,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
             output, error = process.communicate()
             if error:
                 lgr.error(f"Error running command: {error.decode()}")
@@ -77,7 +79,7 @@ class PortsRelease:
                 "Darwin": f"kill -9 {pid}",
             }.get(platform.system())
             if not cmd:
-                lgr.error(f"Unsupported operating system: {platform.system()}")
+                lgr.error(f"Unsupported OS: {platform.system()}")
                 return False
             process = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE)
             _, error = process.communicate()

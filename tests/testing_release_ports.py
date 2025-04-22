@@ -83,7 +83,53 @@ class TestPortsRelease(unittest.TestCase):
             pid = self.ports_release.get_pid_by_port(1234)
             self.assertIsNone(pid)
             self.mock_logger.error.assert_called_once_with("Unsupported "
-                                                           "operating system: UnsupportedOS")
+                                                           "OS: UnsupportedOS")
+
+    def test_get_pid_by_port_no_process(self):
+        with patch('platform.system', return_value='Linux'):
+            with patch('subprocess.Popen') as mock_popen:
+                mock_process = unittest.mock.MagicMock()
+                mock_process.communicate.return_value = (b"", b"")
+                mock_popen.return_value = mock_process
+                pid = self.ports_release.get_pid_by_port(9999)
+                self.assertIsNone(pid)
+
+    def test_get_pid_by_port_command_error(self):
+        with patch('platform.system', return_value='Linux'):
+            with patch('subprocess.Popen') as mock_popen:
+                mock_process = unittest.mock.MagicMock()
+                mock_process.communicate.return_value = (b"", b"Error occurred")
+                mock_popen.return_value = mock_process
+                pid = self.ports_release.get_pid_by_port(80)
+                self.assertIsNone(pid)
+                self.mock_logger.error.assert_called_once_with("Error running command: Error occurred")
+
+    def test_get_pid_by_port_parse_error(self):
+        with patch('platform.system', return_value='Linux'):
+            with patch('subprocess.Popen') as mock_popen:
+                mock_process = unittest.mock.MagicMock()
+                mock_process.communicate.return_value = (b"tcp6   0"
+                                                         b"      0 "
+                                                         b":::8080"
+                                                         b"              "
+                                                         b":::* users:((\"python3\","
+                                                         b"pid=invalid,fd=4))\n", b"")
+                mock_popen.return_value = mock_process
+                pid = self.ports_release.get_pid_by_port(8080)
+                self.assertIsNone(pid)
+                self.mock_logger.error.assert_called_once_with("Could not parse PID "
+                                                               "from line: tcp6   0"
+                                                               "      0 :::8080"
+                                                               "              :::*"
+                                                               " users:((\"python3\","
+                                                               "pid=invalid,fd=4))")
+
+    def test_get_pid_by_port_unexpected_exception(self):
+        with patch('platform.system', return_value='Linux'):
+            with patch('subprocess.Popen', side_effect=Exception("Unexpected")):
+                pid = self.ports_release.get_pid_by_port(1234)
+                self.assertIsNone(pid)
+                self.mock_logger.error.assert_called_once_with("An unexpected error occurred: Unexpected")
 
 
 if __name__ == '__main__':

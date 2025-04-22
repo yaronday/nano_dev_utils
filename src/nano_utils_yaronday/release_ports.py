@@ -2,7 +2,6 @@ import platform
 import subprocess
 import logging
 from typing import Optional
-from timers import Timer
 
 
 logging.basicConfig(filename='port release.log',
@@ -90,6 +89,7 @@ class PortsRelease:
             lgr.error(f"An unexpected error occurred: {e}")
             return False
 
+    @tr.timeit
     def release_all(self, ports: Optional[list[int]] = None) -> None:
         try:
             ports_to_release: list[int] = self.default_ports if ports is None else ports

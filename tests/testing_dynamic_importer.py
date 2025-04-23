@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch
 from types import ModuleType
-from src.nano_utils_yaronday.dynamic_importer import Importer
+from nano_utils_yaronday.dynamic_importer import Importer
 
 
 class TestImporter(unittest.TestCase):

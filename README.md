@@ -1,6 +1,6 @@
-# nano_utils
+# nano_dev_utils_yaronday
 
-A collection of small, useful Python utility modules.
+A collection of small Python utilities for developers.
 
 ## Modules
 
@@ -26,15 +26,17 @@ This module provides a `Timer` class for measuring the execution time of code bl
 
 ```python
 import time
-from src.nano_utils_yaronday.timers import Timer
+from src.nano_dev_utils_yaronday.timers import Timer
 
 timer = Timer(precision=6, verbose=True)
 
+
 @timer.timeit
 def my_function(a, b=10):
-    """A sample function."""
-    time.sleep(0.1)
-    return a + b
+  """A sample function."""
+  time.sleep(0.1)
+  return a + b
+
 
 result = my_function(5, b=20)
 print(f"Result: {result}")
@@ -57,7 +59,7 @@ This module provides an `Importer` class for lazy loading and caching module imp
 #### Example Usage:
 
 ```python
-from src.nano_utils_yaronday.dynamic_importer import Importer
+from src.nano_dev_utils_yaronday.dynamic_importer import Importer
 
 importer = Importer()
 
@@ -102,7 +104,7 @@ listening on specified TCP ports. It supports Windows, Linux, and macOS.
 #### Example Usage:
 
 ```python
-from src.nano_utils_yaronday.release_ports import PortsRelease
+from src.nano_dev_utils_yaronday.release_ports import PortsRelease
 
 # Create an instance with default ports
 port_releaser = PortsRelease()

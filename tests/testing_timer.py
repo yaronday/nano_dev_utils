@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from src.nano_utils_yaronday.timers import Timer
+from nano_utils_yaronday.timers import Timer
 
 
 class TestTimer(unittest.TestCase):

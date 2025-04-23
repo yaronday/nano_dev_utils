@@ -1,7 +1,7 @@
 from types import ModuleType
 from typing import Any
 
-import importlib
+from importlib import import_module
 
 
 class Importer:
@@ -18,7 +18,7 @@ class Importer:
             return self.imported_modules[module_name]
 
         try:
-            module = importlib.import_module(f"{library}.{module_name}")
+            module = import_module(f"{library}.{module_name}")
             self.imported_modules[module_name] = module
             return module
         except ModuleNotFoundError as e:

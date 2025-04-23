@@ -112,12 +112,3 @@ class PortsRelease:
                     lgr.error(f"Failed to terminate process {pid} (on port {port}).")
         except Exception as e:
             lgr.error(f"An unexpected error occurred: {e}")
-
-
-def run():
-    pr = PortsRelease()
-    pr.release_all()
-
-
-if __name__ == "__main__":
-    run()

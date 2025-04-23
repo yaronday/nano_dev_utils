@@ -9,7 +9,7 @@ class Importer:
         self.imported_modules = {}
 
     def import_mod_from_lib(self, library: str, module_name: str) -> ModuleType | Any:
-        """Lazy load & cache module imports from a specified library.
+        """Lazily imports and caches a specific submodule from a given library.
         :param library: The name of the library.
         :param module_name: The name of the module to import.
         :return: The imported module.

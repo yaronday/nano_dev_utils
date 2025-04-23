@@ -9,26 +9,9 @@ class TestTimer(unittest.TestCase):
         timer = Timer()
         self.assertEqual(timer.precision, 4)
         self.assertFalse(timer.verbose)
-        self.assertEqual(timer.timing_records, [])
-
         timer_custom = Timer(precision=6, verbose=True)
         self.assertEqual(timer_custom.precision, 6)
         self.assertTrue(timer_custom.verbose)
-        self.assertEqual(timer_custom.timing_records, [])
-
-    def test_record_timing(self):
-        timer = Timer(precision=3)
-        timer.record_timing(1.23456)
-        self.assertEqual(timer.timing_records, ['1.235'])
-        timer.record_timing(0.00789)
-        self.assertEqual(timer.timing_records, ['1.235', '0.008'])
-
-    def test_get_timing_records(self):
-        timer = Timer()
-        timer.record_timing(0.5)
-        timer.record_timing(1.0)
-        records = timer.get_timing_records()
-        self.assertEqual(records, ['0.5000', '1.0000'])
 
     @patch('time.perf_counter')
     @patch('builtins.print')

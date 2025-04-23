@@ -4,15 +4,8 @@ import time
 
 class Timer:
     def __init__(self, precision=4, verbose=False):
-        self.timing_records = []
         self.precision = precision
         self.verbose = verbose
-
-    def record_timing(self, duration):
-        self.timing_records.append(f'{duration:.{self.precision}f}')
-
-    def get_timing_records(self):
-        return self.timing_records
 
     def timeit(self, func):
         @wraps(func)

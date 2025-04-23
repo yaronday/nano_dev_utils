@@ -43,10 +43,6 @@ def my_function(a, b=10):
 
 result = my_function(5, b=20)
 print(f"Result: {result}")
-
-time.sleep(0.05)
-timer.record_timing(0.123456789)
-print(f"Timing Records: {timer.get_timing_records()}")
 ```
 
 ### `dynamic_importer.py`

@@ -17,11 +17,6 @@ This module provides a `Timer` class for measuring the execution time of code bl
     * arguments will be included in the printed timing output. Defaults to `False`.
     * `timing_records` (list): A list to store the recorded timing durations as formatted strings.
 
-* **`record_timing(self, duration)`**: Records a given `duration` (float) to 
-* the `timing_records` list, formatted according to the `precision`.
-
-* **`get_timing_records(self)`**: Returns the list of recorded timing durations.
-
 * **`timeit(self, func)`**: A decorator that measures the execution time of the decorated function.
     * When the decorated function is called, this decorator records the start and end times,
     * calculates the total execution time, prints the function name and execution time 

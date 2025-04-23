@@ -117,4 +117,5 @@ port_releaser.release_all()
 ```
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE.md) file for details.
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/yaronday/nano_utils/blob/master/LICENSE.md)
+) file for details.

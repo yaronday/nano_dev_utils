@@ -157,7 +157,7 @@ class TestPortsRelease(unittest.TestCase):
                 mock_popen.return_value = mock_process
                 result = self.ports_release.kill_process(1234)
                 self.assertFalse(result)
-                self.mock_logger.error.assert_called_once_with("Failed to kill "
+                self.mock_logger.error.assert_called_once_with("Failed to terminate "
                                                                "process 1234. "
                                                                "Error: Access denied")
 
@@ -192,12 +192,12 @@ class TestPortsRelease(unittest.TestCase):
                                               f"port {PROXY_SERVER}: 1111")
         self.mock_logger.info.assert_any_call(f"Process {1111} (on port "
                                               f"{PROXY_SERVER}) "
-                                              f"killed successfully.")
+                                              f"has been terminated.")
         self.mock_logger.info.assert_any_call(f"Process ID (PID) "
                                               f"found for port {CLIENT_PORT}: "
                                               f"2222")
         self.mock_logger.info.assert_any_call(f"Process {2222} (on port "
-                                              f"{CLIENT_PORT}) killed successfully.")
+                                              f"{CLIENT_PORT}) has been terminated.")
 
     def test_release_all_invalid_port(self):
         with patch('testing_release_ports.rp.PortsRelease.get_pid_by_port') as mock_get_pid:

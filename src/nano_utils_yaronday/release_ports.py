@@ -84,7 +84,7 @@ class PortsRelease:
             process = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE)
             _, error = process.communicate()
             if process.returncode:
-                lgr.error(f"Failed to kill process {pid}. Error: {error.decode()}")
+                lgr.error(f"Failed to terminate process {pid}. Error: {error.decode()}")
                 return False
             return True
         except Exception as e:
@@ -107,8 +107,17 @@ class PortsRelease:
 
                 lgr.info(f"Process ID (PID) found for port {port}: {pid}")
                 if self.kill_process(pid):
-                    lgr.info(f"Process {pid} (on port {port}) killed successfully.")
+                    lgr.info(f"Process {pid} (on port {port}) has been terminated.")
                 else:
-                    lgr.error(f"Failed to kill process {pid} (on port {port}).")
+                    lgr.error(f"Failed to terminate process {pid} (on port {port}).")
         except Exception as e:
             lgr.error(f"An unexpected error occurred: {e}")
+
+
+def run():
+    pr = PortsRelease()
+    pr.release_all()
+
+
+if __name__ == "__main__":
+    run()

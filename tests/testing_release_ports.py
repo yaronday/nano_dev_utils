@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, call
 import logging
-from nano_utils_yaronday import release_ports as rp
+from src.nano_dev_utils_yaronday import release_ports as rp
 
 PROXY_SERVER = rp.PROXY_SERVER
 CLIENT_PORT = rp.INSPECTOR_CLIENT
@@ -85,8 +85,8 @@ class TestPortsRelease(unittest.TestCase):
         with patch('platform.system', return_value='UnsupportedOS'):
             pid = self.ports_release.get_pid_by_port(1234)
             self.assertIsNone(pid)
-            self.mock_logger.error.assert_called_once_with("Unsupported "
-                                                           "OS: UnsupportedOS")
+            self.mock_logger.error.assert_called_once_with(self.ports_release.
+                                                           _log_unsupported_os())
 
     def test_get_pid_by_port_no_process(self):
         with patch('platform.system', return_value='Linux'):
@@ -149,77 +149,78 @@ class TestPortsRelease(unittest.TestCase):
                                                    shell=True, stderr=unittest.mock.ANY)
 
     def test_kill_process_fail(self):
+        pid = 1234
+        err = 'Access denied'
         with patch('platform.system', return_value='Windows'):
             with patch('subprocess.Popen') as mock_popen:
                 mock_process = unittest.mock.MagicMock()
                 mock_process.returncode = 1
-                mock_process.communicate.return_value = (b"", b"Access denied")
+                mock_process.communicate.return_value = (b"", err.encode('utf-8'))
                 mock_popen.return_value = mock_process
-                result = self.ports_release.kill_process(1234)
+                result = self.ports_release.kill_process(pid)
                 self.assertFalse(result)
-                self.mock_logger.error.assert_called_once_with("Failed to terminate "
-                                                               "process 1234. "
-                                                               "Error: Access denied")
+                self.mock_logger.error.assert_called_once_with(self.ports_release.
+                                                               _log_terminate_failed(pid=pid, error="Access denied"))
 
     def test_kill_process_unsupported_os(self):
         with patch('platform.system', return_value='UnsupportedOS'):
             result = self.ports_release.kill_process(9999)
             self.assertFalse(result)
-            self.mock_logger.error.assert_called_once_with("Unsupported OS: "
-                                                           "UnsupportedOS")
+            self.mock_logger.error.assert_called_once_with(self.ports_release.
+                                                           _log_unsupported_os())
 
     def test_kill_process_unexpected_exception(self):
-        with patch('platform.system', return_value='Linux'):
+        err = Exception("Another error")
+        with (patch('platform.system', return_value='Linux')):
             with patch('subprocess.Popen',
-                       side_effect=Exception("Another error")):
+                       side_effect=err):
                 result = self.ports_release.kill_process(4321)
                 self.assertFalse(result)
-                self.mock_logger.error.assert_called_once_with("An unexpected "
-                                                               "error occurred: "
-                                                               "Another error")
+                self.mock_logger.error.assert_called_once_with(self.ports_release.
+                                                               _log_unexpected_error(err))
                 
     @patch('testing_release_ports.rp.PortsRelease.get_pid_by_port')
     @patch('testing_release_ports.rp.PortsRelease.kill_process')
     def test_release_all_default_ports_success(self, mock_kill, mock_get_pid):
-        mock_get_pid.side_effect = [1111, 2222]
+        pid1, pid2 = 1111, 2222
+        mock_get_pid.side_effect = [pid1, pid2]
         mock_kill.side_effect = [True, True]
         self.ports_release.release_all()
         mock_get_pid.assert_has_calls([call(PROXY_SERVER), call(CLIENT_PORT)])
-        mock_kill.assert_has_calls([call(1111), call(2222)])
+        mock_kill.assert_has_calls([call(pid1), call(pid2)])
         self.assertEqual(mock_get_pid.call_count, 2)
         self.assertEqual(mock_kill.call_count, 2)
-        self.mock_logger.info.assert_any_call(f"Process ID (PID) found for "
-                                              f"port {PROXY_SERVER}: 1111")
-        self.mock_logger.info.assert_any_call(f"Process {1111} (on port "
-                                              f"{PROXY_SERVER}) "
-                                              f"has been terminated.")
-        self.mock_logger.info.assert_any_call(f"Process ID (PID) "
-                                              f"found for port {CLIENT_PORT}: "
-                                              f"2222")
-        self.mock_logger.info.assert_any_call(f"Process {2222} (on port "
-                                              f"{CLIENT_PORT}) has been terminated.")
+        self.mock_logger.info.assert_any_call(self.ports_release.
+                                              _log_process_found(PROXY_SERVER, pid1))
+        self.mock_logger.info.assert_any_call(self.ports_release.
+                                              _log_process_terminated(pid1, PROXY_SERVER))
+        self.mock_logger.info.assert_any_call(self.ports_release.
+                                              _log_process_found(CLIENT_PORT, pid2))
+        self.mock_logger.info.assert_any_call(self.ports_release.
+                                              _log_process_terminated(pid2, CLIENT_PORT))
 
     def test_release_all_invalid_port(self):
         with patch('testing_release_ports.rp.PortsRelease.get_pid_by_port') as mock_get_pid:
             with patch('testing_release_ports.rp.PortsRelease.kill_process') as mock_kill:
                 # Make get_pid_by_port return None for the valid ports in this test
+                port = "invalid"
                 mock_get_pid.side_effect = [None, None]
                 self.ports_release.release_all(ports=[1234, "invalid", 5678])
                 mock_get_pid.assert_any_call(1234)
                 mock_get_pid.assert_any_call(5678)
                 self.assertEqual(mock_get_pid.call_count, 2)
                 mock_kill.assert_not_called()
-                self.mock_logger.error.assert_called_once_with("Invalid port "
-                                                               "number: invalid."
-                                                               " Skipping.")
+                self.mock_logger.error.assert_called_once_with(self.ports_release.
+                                                               _log_invalid_port(port))
 
     def test_release_all_unexpected_exception(self):
+        err = Exception("Release all error")
         with patch('testing_release_ports.'
                    'rp.PortsRelease.get_pid_by_port',
-                   side_effect=Exception("Release all error")):
+                   side_effect=err):
             self.ports_release.release_all(ports=[9010])
-            self.mock_logger.error.assert_called_once_with("An unexpected error "
-                                                           "occurred: Release all error")
+            self.mock_logger.error.assert_called_once_with(self.ports_release.
+                                                           _log_unexpected_error(err))
             self.ports_release.get_pid_by_port.assert_called_once_with(9010)
 
 

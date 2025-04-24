@@ -1,10 +1,10 @@
 [project]
 name = "nano_dev_utils"
-version = "0.1.6"
+version = "0.2.0"
 authors = [
   { name="Yaron Dayan", email="yaronday77@gmail.com" },
 ]
-description = "A tiny utility package for various development projects."
+description = "A collection of small Python utilities for developers."
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [

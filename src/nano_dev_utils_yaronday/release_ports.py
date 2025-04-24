@@ -20,7 +20,48 @@ class PortsRelease:
             if default_ports is not None else [PROXY_SERVER, INSPECTOR_CLIENT]
 
     @staticmethod
-    def get_pid_by_port(port: int) -> Optional[int]:
+    def _log_process_found(port: int, pid: int) -> str:
+        return f'Process ID (PID) found for port {port}: {pid}.'
+
+    @staticmethod
+    def _log_process_terminated(pid: int, port: int) -> str:
+        return f'Process {pid} (on port {port}) terminated successfully.'
+
+    @staticmethod
+    def _log_no_process(port: int) -> str:
+        return f'No process found listening on port {port}.'
+
+    @staticmethod
+    def _log_invalid_port(port: int) -> str:
+        return f'Invalid port number: {port}. Skipping.'
+
+    @staticmethod
+    def _log_terminate_failed(pid: int, port: Optional[int] = None,
+                              error: Optional[str] = None) -> str:
+        base_msg = f'Failed to terminate process {pid}'
+        if port:
+            base_msg += f' (on port {port})'
+        if error:
+            base_msg += f'. Error: {error}'
+        return base_msg
+
+    @staticmethod
+    def _log_line_parse_failed(line: str) -> str:
+        return f'Could not parse PID from line: {line}'
+
+    @staticmethod
+    def _log_unexpected_error(e: Exception) -> str:
+        return f'An unexpected error occurred: {e}'
+
+    @staticmethod
+    def _log_cmd_error(error: bytes) -> str:
+        return f'Error running command: {error.decode()}'
+
+    @staticmethod
+    def _log_unsupported_os() -> str:
+        return f'Unsupported OS: {platform.system()}'
+
+    def get_pid_by_port(self, port: int) -> Optional[int]:
         """Gets the process ID (PID) listening on the specified port."""
         try:
             cmd: Optional[str] = {
@@ -29,7 +70,7 @@ class PortsRelease:
                 "Darwin": f"lsof -i :{port}",
             }.get(platform.system())
             if not cmd:
-                lgr.error(f"Unsupported OS: {platform.system()}")
+                lgr.error(self._log_unsupported_os())
                 return None
 
             process = subprocess.Popen(cmd, shell=True,
@@ -37,7 +78,7 @@ class PortsRelease:
                                        stderr=subprocess.PIPE)
             output, error = process.communicate()
             if error:
-                lgr.error(f"Error running command: {error.decode()}")
+                lgr.error(self._log_cmd_error(error))
                 return None
 
             lines: list[str] = output.decode().splitlines()
@@ -48,7 +89,7 @@ class PortsRelease:
                         try:
                             return int(parts[4])
                         except ValueError:
-                            lgr.error(f"Could not parse PID from line: {line}")
+                            lgr.error(self._log_line_parse_failed(line))
                             return None
                     elif platform.system() == "Linux":
                         for part in parts:
@@ -56,39 +97,39 @@ class PortsRelease:
                                 try:
                                     return int(part.split("=")[1])
                                 except ValueError:
-                                    lgr.error(f"Could not parse PID from line: {line}")
+                                    lgr.error(self._log_line_parse_failed(line))
                                     return None
                     elif platform.system() == "Darwin" and len(parts) > 1:
                         try:
                             return int(parts[1])
                         except ValueError:
-                            lgr.error(f"Could not parse PID from line: {line}")
+                            lgr.error(self._log_line_parse_failed(line))
                             return None
             return None
         except Exception as e:
-            lgr.error(f"An unexpected error occurred: {e}")
+            lgr.error(self._log_unexpected_error(e))
             return None
 
-    @staticmethod
-    def kill_process(pid: int) -> bool:
+    def kill_process(self, pid: int) -> bool:
         """Kills the process with the specified PID."""
         try:
             cmd: Optional[str] = {
-                "Windows": f"taskkill /F /PID {pid}",
-                "Linux": f"kill -9 {pid}",
-                "Darwin": f"kill -9 {pid}",
+                'Windows': f'taskkill /F /PID {pid}',
+                'Linux': f'kill -9 {pid}',
+                'Darwin': f'kill -9 {pid}',
             }.get(platform.system())
             if not cmd:
-                lgr.error(f"Unsupported OS: {platform.system()}")
+                lgr.error(self._log_unsupported_os())
                 return False
             process = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE)
             _, error = process.communicate()
             if process.returncode:
-                lgr.error(f"Failed to terminate process {pid}. Error: {error.decode()}")
+                error_msg = error.decode()
+                lgr.error(self._log_terminate_failed(pid=pid, error=error_msg))
                 return False
             return True
         except Exception as e:
-            lgr.error(f"An unexpected error occurred: {e}")
+            lgr.error(self._log_unexpected_error(e))
             return False
 
     def release_all(self, ports: Optional[list[int]] = None) -> None:
@@ -97,18 +138,19 @@ class PortsRelease:
 
             for port in ports_to_release:
                 if not isinstance(port, int):
-                    lgr.error(f"Invalid port number: {port}. Skipping.")
+                    lgr.error(self._log_invalid_port(port))
                     continue
 
                 pid: Optional[int] = self.get_pid_by_port(port)
                 if pid is None:
-                    lgr.info(f"No process found listening on port {port}.")
+                    lgr.info(self._log_no_process(port))
                     continue
 
-                lgr.info(f"Process ID (PID) found for port {port}: {pid}")
+                lgr.info(self._log_process_found(port, pid))
                 if self.kill_process(pid):
-                    lgr.info(f"Process {pid} (on port {port}) has been terminated.")
+                    lgr.info(self._log_process_terminated(pid, port))
                 else:
-                    lgr.error(f"Failed to terminate process {pid} (on port {port}).")
+                    lgr.error(self._log_terminate_failed(pid=pid, port=port))
         except Exception as e:
-            lgr.error(f"An unexpected error occurred: {e}")
+            lgr.error(self._log_unexpected_error(e))
+

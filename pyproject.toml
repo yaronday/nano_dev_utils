@@ -1,5 +1,5 @@
 [project]
-name = "nano_dev_utils_yaronday"
+name = "nano_dev_utils"
 version = "0.2.1"
 authors = [
   { name="Yaron Dayan", email="yaronday77@gmail.com" },

@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, call
 import logging
-from src.nano_dev_utils_yaronday import release_ports as rp
+from src.nano_dev_utils import release_ports as rp
 
 PROXY_SERVER = rp.PROXY_SERVER
 CLIENT_PORT = rp.INSPECTOR_CLIENT

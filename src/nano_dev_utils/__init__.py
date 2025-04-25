@@ -1,6 +1,7 @@
-"""Nano-Utils-Yaronday - A collection of small Python utilities for developers.
+"""nano-dev-utils - A collection of small Python utilities for developers.
 Copyright (c) 2025 Yaron Dayan
 """
+
 from .dynamic_importer import Importer
 from .timers import Timer
 from .release_ports import PortsRelease, PROXY_SERVER, INSPECTOR_CLIENT

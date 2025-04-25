@@ -6,6 +6,7 @@ class Timer:
     def __init__(self, precision=4, verbose=False):
         self.precision = precision
         self.verbose = verbose
+        # todo support nano res (auto-adjusted based on result or apriori determined)
 
     def timeit(self, func):
         @wraps(func)

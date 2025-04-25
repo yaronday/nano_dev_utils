@@ -19,14 +19,6 @@ class TestPortsRelease(unittest.TestCase):
         self.addCleanup(patch.stopall)
 
     @staticmethod
-    def _encode_array(arr: list[str]) -> bytes:
-        return ''.join(arr).encode()
-
-    @staticmethod
-    def _encode_dict(input_dict: dict) -> bytes:
-        return b' '.join(str(v).encode() for v in input_dict.values())
-
-    @staticmethod
     def remove_file_handlers():
         """Temporarily remove any file handlers from the root logger"""
         root_logger = logging.getLogger()
@@ -42,22 +34,16 @@ class TestPortsRelease(unittest.TestCase):
         patch.stopall()
 
     def test_get_pid_by_port_linux_success(self):
-        with (patch('platform.system', return_value='Linux')):
+        with patch('platform.system', return_value='Linux'):
             with patch('subprocess.Popen') as mock_popen:
-                port = 8080
-                _pid = 1234
-                cmd_resp = [f'tcp6 0 0 :::{port} ',
-                            f':::* users:(("python3",)',
-                            f' pid={_pid} fd=4)\n',
-                            ]
-                cmd_resp_byte = self._encode_array(cmd_resp)
-
                 mock_process = unittest.mock.MagicMock()
-                mock_process.communicate.return_value = (cmd_resp_byte, '')
+                mock_process.communicate.return_value = (b"tcp6 0 0 :::8080 "
+                                                         b":::* users:((\"python3\",)"
+                                                         b" pid=1234 fd=4)\n", b"")
                 mock_popen.return_value = mock_process
-                pid = self.ports_release.get_pid_by_port(port)
-                self.assertEqual(pid, _pid)
-                mock_popen.assert_called_once_with(f'ss -lntp | grep :{port}',
+                pid = self.ports_release.get_pid_by_port(8080)
+                self.assertEqual(pid, 1234)
+                mock_popen.assert_called_once_with('ss -lntp | grep :8080',
                                                    shell=True, stdout=unittest.mock.ANY,
                                                    stderr=unittest.mock.ANY)
 
@@ -65,26 +51,16 @@ class TestPortsRelease(unittest.TestCase):
         with patch('platform.system', return_value='Windows'):
             with patch('subprocess.Popen') as mock_popen:
                 mock_process = unittest.mock.MagicMock()
-
-                # netstat -ano command response structure (Windows)
-                port = 9000
-                _pid = 5678
-                protocol = 'TCP'
-                local_addr = '0.0.0.0'
-                remote_addr = '0.0.0.0'
-                remote_port = 0
-                state = 'LISTENING'
-
-                cmd_resp = [f'{protocol} {local_addr}:{port} ',
-                            f'{remote_addr}:{remote_port} ',
-                            f'{state} {_pid}\n']
-
-                cmd_resp_byte = self._encode_array(cmd_resp)
-                mock_process.communicate.return_value = (cmd_resp_byte, '')
+                mock_process.communicate.return_value = (b"TCP    0.0.0.0:"
+                                                         b"9000           "
+                                                         b"0.0.0.0:0"
+                                                         b"              "
+                                                         b"LISTENING"
+                                                         b"       5678\n", b"")
                 mock_popen.return_value = mock_process
-                pid = self.ports_release.get_pid_by_port(port)
-                self.assertEqual(pid, _pid)
-                mock_popen.assert_called_once_with(f'netstat -ano | findstr :{port}',
+                pid = self.ports_release.get_pid_by_port(9000)
+                self.assertEqual(pid, 5678)
+                mock_popen.assert_called_once_with('netstat -ano | findstr :9000',
                                                    shell=True, stdout=unittest.mock.ANY,
                                                    stderr=unittest.mock.ANY)
 
@@ -92,33 +68,16 @@ class TestPortsRelease(unittest.TestCase):
         with patch('platform.system', return_value='Darwin'):
             with patch('subprocess.Popen') as mock_popen:
                 mock_process = unittest.mock.MagicMock()
-                # lsof -i  command response structure (MacOS)
-                port = 7000
-                _pid = 1111
-                lsof_entry = {
-                    "command": "python3",  # Process name
-                    "pid": f'{_pid}',  # Process ID (integer)
-                    "user": "user",  # User running the process
-                    "fd": "10u",  # File descriptor (read/write)
-                    "type": "IPv4",  # Network connection type (IPv4/IPv6)
-                    "device": "0xabcdef0123456789",  # Kernel device identifier
-                    "size_off": "0t0",  # Size/offset (0 for sockets)
-                    "protocol": "TCP",  # Protocol (TCP/UDP)
-                    "name": f"*:{port} (LISTEN)"  # Combined address & state (optional)
-                }
-
-                mock_process.communicate.return_value = (self._encode_dict(lsof_entry), '')
-
-                # mock_process.communicate.return_value = (b"python3     "
-                #                                          b"1111 user   "
-                #                                          b"10u  IPv4 "
-                #                                          b"0xabcdef0123456789"
-                #                                          b"      0t0  TCP *:"
-                #                                          b"7000 (LISTEN)\n", b"")
+                mock_process.communicate.return_value = (b"python3     "
+                                                         b"1111 user   "
+                                                         b"10u  IPv4 "
+                                                         b"0xabcdef0123456789"
+                                                         b"      0t0  TCP *:"
+                                                         b"7000 (LISTEN)\n", b"")
                 mock_popen.return_value = mock_process
-                pid = self.ports_release.get_pid_by_port(port)
-                self.assertEqual(pid, _pid)
-                mock_popen.assert_called_once_with(f'lsof -i :{port}',
+                pid = self.ports_release.get_pid_by_port(7000)
+                self.assertEqual(pid, 1111)
+                mock_popen.assert_called_once_with('lsof -i :7000',
                                                    shell=True, stdout=unittest.mock.ANY,
                                                    stderr=unittest.mock.ANY)
 
@@ -201,7 +160,7 @@ class TestPortsRelease(unittest.TestCase):
                 result = self.ports_release.kill_process(pid)
                 self.assertFalse(result)
                 self.mock_logger.error.assert_called_once_with(self.ports_release.
-                                                               _log_terminate_failed(pid=pid, error=err))
+                                                               _log_terminate_failed(pid=pid, error="Access denied"))
 
     def test_kill_process_unsupported_os(self):
         with patch('platform.system', return_value='UnsupportedOS'):

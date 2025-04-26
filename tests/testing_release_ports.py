@@ -1,4 +1,3 @@
-import platform
 import unittest
 from unittest.mock import patch, call
 import logging
@@ -35,6 +34,16 @@ class TestPortsRelease(unittest.TestCase):
         for handler in existing_file_handlers:
             root_logger.removeHandler(handler)
             handler.close()
+
+    def _mock_pid_retrieval(self, mock_popen: unittest.mock.MagicMock,
+                            entry: dict,
+                            port: int) -> (int, bytes):
+        mock_process = unittest.mock.MagicMock()
+        encoded_entry = self._encode_dict(entry)
+        mock_process.communicate.return_value = (encoded_entry, '')
+        mock_popen.return_value = mock_process
+        pid = self.ports_release.get_pid_by_port(port)
+        return pid, encoded_entry
 
     def tearDown(self):
         patch.stopall()
@@ -84,16 +93,6 @@ class TestPortsRelease(unittest.TestCase):
                 mock_popen.assert_called_once_with(f'netstat -ano | findstr :{port}',
                                                    shell=True, stdout=unittest.mock.ANY,
                                                    stderr=unittest.mock.ANY)
-
-    def _mock_pid_retrieval(self, mock_popen: unittest.mock.MagicMock,
-                            entry: dict,
-                            port: int) -> (int, bytes):
-        mock_process = unittest.mock.MagicMock()
-        encoded_entry = self._encode_dict(entry)
-        mock_process.communicate.return_value = (self._encode_dict(entry), '')
-        mock_popen.return_value = mock_process
-        pid = self.ports_release.get_pid_by_port(port)
-        return pid, encoded_entry
 
     def test_get_pid_by_port_darwin_success(self):
         with patch('platform.system', return_value='Darwin'):

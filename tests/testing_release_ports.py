@@ -1,3 +1,4 @@
+import platform
 import unittest
 from unittest.mock import patch, call
 import logging
@@ -8,7 +9,7 @@ CLIENT_PORT = rp.INSPECTOR_CLIENT
 
 
 class TestPortsRelease(unittest.TestCase):
-    PORTS_RELEASE_CLS = 'testing_release_ports.rp.PortsRelease'
+    PORTS_RELEASE_OBJ = 'testing_release_ports.rp.PortsRelease'
 
     def setUp(self):
         self.ports_release = rp.PortsRelease()
@@ -18,10 +19,6 @@ class TestPortsRelease(unittest.TestCase):
 
         patch.object(rp, 'lgr', self.mock_logger).start()
         self.addCleanup(patch.stopall)
-
-    @staticmethod
-    def _encode_array(arr: list[str]) -> bytes:
-        return ''.join(arr).encode()
 
     @staticmethod
     def _encode_dict(input_dict: dict) -> bytes:
@@ -43,7 +40,7 @@ class TestPortsRelease(unittest.TestCase):
         patch.stopall()
 
     def test_get_pid_by_port_linux_success(self):
-        with (patch('platform.system', return_value='Linux')):
+        with patch('platform.system', return_value='Linux'):
             with patch('subprocess.Popen') as mock_popen:
                 # ss - lntp command response structure
                 port = 8080  # local port
@@ -230,8 +227,8 @@ class TestPortsRelease(unittest.TestCase):
                 self.mock_logger.error.assert_called_once_with(self.ports_release.
                                                                _log_unexpected_error(err))
                 
-    @patch(f'{PORTS_RELEASE_CLS}.get_pid_by_port')
-    @patch(f'{PORTS_RELEASE_CLS}.kill_process')
+    @patch(f'{PORTS_RELEASE_OBJ}.get_pid_by_port')
+    @patch(f'{PORTS_RELEASE_OBJ}.kill_process')
     def test_release_all_default_ports_success(self, mock_kill, mock_get_pid):
         pid1, pid2 = 1111, 2222
         mock_get_pid.side_effect = [pid1, pid2]
@@ -251,8 +248,8 @@ class TestPortsRelease(unittest.TestCase):
                                               _log_process_terminated(pid2, CLIENT_PORT))
 
     def test_release_all_invalid_port(self):
-        with patch(f'{self.PORTS_RELEASE_CLS}.get_pid_by_port') as mock_get_pid:
-            with patch(f'{self.PORTS_RELEASE_CLS}.kill_process') as mock_kill:
+        with patch(f'{self.PORTS_RELEASE_OBJ}.get_pid_by_port') as mock_get_pid:
+            with patch(f'{self.PORTS_RELEASE_OBJ}.kill_process') as mock_kill:
                 # Make get_pid_by_port return None for the valid ports in this test
                 ports = ["invalid", 1234, 5678]
                 mock_get_pid.side_effect = [None, None]
@@ -266,7 +263,7 @@ class TestPortsRelease(unittest.TestCase):
 
     def test_release_all_unexpected_exception(self):
         err = Exception("Release all error")
-        with patch(f'{self.PORTS_RELEASE_CLS}.'
+        with patch(f'{self.PORTS_RELEASE_OBJ}.'
                    f'get_pid_by_port', side_effect=err):
             port = 9010
             self.ports_release.release_all(ports=[port])

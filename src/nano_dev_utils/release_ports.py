@@ -63,12 +63,13 @@ class PortsRelease:
 
     def get_pid_by_port(self, port: int) -> Optional[int]:
         """Gets the process ID (PID) listening on the specified port."""
+        system = platform.system()
         try:
             cmd: Optional[str] = {
                 "Windows": f"netstat -ano | findstr :{port}",
                 "Linux": f"ss -lntp | grep :{port}",
                 "Darwin": f"lsof -i :{port}",
-            }.get(platform.system())
+            }.get(system)
             if not cmd:
                 lgr.error(self._log_unsupported_os())
                 return None
@@ -85,13 +86,13 @@ class PortsRelease:
             for line in lines:
                 if str(port) in line:
                     parts: list[str] = line.split()
-                    if platform.system() == "Windows" and len(parts) > 4:
+                    if system == "Windows" and len(parts) > 4:
                         try:
                             return int(parts[4])
                         except ValueError:
                             lgr.error(self._log_line_parse_failed(line))
                             return None
-                    elif platform.system() == "Linux":
+                    elif system == "Linux":
                         for part in parts:
                             if "pid=" in part:
                                 try:
@@ -99,7 +100,7 @@ class PortsRelease:
                                 except ValueError:
                                     lgr.error(self._log_line_parse_failed(line))
                                     return None
-                    elif platform.system() == "Darwin" and len(parts) > 1:
+                    elif system == "Darwin" and len(parts) > 1:
                         try:
                             return int(parts[1])
                         except ValueError:

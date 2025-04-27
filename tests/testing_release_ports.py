@@ -173,12 +173,13 @@ class TestPortsRelease(unittest.TestCase):
 
     def test_get_pid_by_port_unexpected_exception(self):
         with patch('platform.system', return_value='Linux'):
-            with patch('subprocess.Popen', side_effect=Exception("Unexpected")):
+            err = Exception("Unexpected")
+            with patch('subprocess.Popen', side_effect=err):
                 port = 1234
                 pid = self.ports_release.get_pid_by_port(port)
                 self.assertIsNone(pid)
-                self.mock_logger.error.assert_called_once_with("An unexpected "
-                                                               "error occurred: Unexpected")
+                self.mock_logger.error.assert_called_once_with(f'An unexpected '
+                                                               f'error occurred: {err}')
 
     def test_kill_process_success(self):
         with patch('platform.system', return_value='Linux'):

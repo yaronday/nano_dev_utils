@@ -1,8 +1,11 @@
 [project]
 name = "nano_dev_utils"
 version = "0.3.1"
-author = "Yaron Dayan"
-author-email = "yaronday77@gmail.com"
+url = "https://github.com/yaronday/nano_utils"
+
+authors = [
+  { name="Yaron Dayan", email="yaronday77@gmail.com" },
+]
 description = "A collection of small Python utilities for developers."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -20,4 +23,3 @@ build-backend = "hatchling.build"
 [project.urls]
 Homepage = "https://github.com/yaronday/nano_utils"  # PyPI
 Issues = "https://github.com/yaronday/nano_utils/issues"
-Home = "https://github.com/yaronday/nano_utils"

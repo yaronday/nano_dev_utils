@@ -128,4 +128,4 @@ port_releaser.release_all()
 
 ## License
 This project is licensed under the MIT License. 
-See [LICENSE](https://github.com/yaronday/nano_dev_utils/blob/master/README.md) for details.
+See [LICENSE](https://github.com/yaronday/nano_dev_utils/blob/master/LICENSE.md) for details.

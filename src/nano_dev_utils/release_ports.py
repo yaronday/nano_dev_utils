@@ -2,12 +2,8 @@ import platform
 import subprocess
 import logging
 
-
-logging.basicConfig(filename='port release.log',
-                    level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s: %(message)s',
-                    datefmt='%d-%m-%Y %H:%M:%S')
 lgr = logging.getLogger(__name__)
+"""Module-level logger. Configure using logging.basicConfig() in your application."""
 
 PROXY_SERVER = 6277
 INSPECTOR_CLIENT = 6274
@@ -153,4 +149,3 @@ class PortsRelease:
                     lgr.error(self._log_terminate_failed(pid=pid, port=port))
         except Exception as e:
             lgr.error(self._log_unexpected_error(e))
-

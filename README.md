@@ -10,16 +10,17 @@ This module provides a `Timer` class for measuring the execution time of code bl
 
 #### `Timer` Class
 
-* **`__init__(self, precision=4, verbose=False)`**: Initializes a `Timer` instance.
-    * `precision` (int, optional): The number of decimal places to record and 
+* **`__init__(self, precision: int = 4, verbose: bool = False)`**: Initializes a `Timer` instance.
+    * `precision`: The number of decimal places to record and    
        display time durations. Defaults to 4.
-    * `verbose` (bool, optional): If `True`, the function's arguments (args) and keyword arguments (kwargs) 
-       will be included in the printed timing output. Defaults to `False`.
+    * `verbose`: Optionally displays the function's positional arguments (args) and keyword arguments (kwargs).       
+       Defaults to `False`.
 
-* **`timeit(self, func)`**: A decorator that measures the execution time of the decorated function.
-    * When the decorated function is called, this decorator records the start and end times,
-    * calculates the total execution time, prints the function name and execution time. 
-    * (optionally including arguments if `verbose` is `True`), and returns the result of the original function.
+* **`timeit(self, func: Callable[P, R]) -> Callable[P, R]`**:   
+      Decorator that times function execution with automatic unit scaling.   
+    * When the decorated function is called, this decorator records the start and end times,   
+      calculates the total execution time, prints the function name and execution    
+      time (optionally including arguments), and returns the result of the original function.
 
 #### Example Usage:
 
@@ -52,7 +53,7 @@ This module provides an `Importer` class for lazy loading and caching module imp
 * **`import_mod_from_lib(self, library: str, module_name: str) -> ModuleType | Any`**: Lazily imports a module from a specified library and caches it.
     * `library` (str): The name of the library (e.g., "os", "requests").
     * `module_name` (str): The name of the module to import within the library (e.g., "path", "get").
-    * Returns the imported module. If the module has already been imported, it returns the cached instance.
+    * Returns the imported module. If the module has already been imported, it returns a cached instance.
     * Raises `ImportError` if the module cannot be found.
 
 #### Example Usage:
@@ -76,34 +77,42 @@ print(f"Imported os.path again (cached): {os_path_again}")
 ### `release_ports.py`
 
 This module provides a `PortsRelease` class to identify and release processes 
-listening on specified TCP ports. It supports Windows, Linux, and macOS.
+listening on specified TCP ports.    
+It supports Windows, Linux, and macOS.
 
 #### `PortsRelease` Class
 
-* **`__init__(self, default_ports: Optional[list[int]] = None)`**: 
+* **`__init__(self, default_ports: list[int] | None = None)`**: 
 * Initializes a `PortsRelease` instance.
-    * `default_ports` (`list[int]`, *optional*): A list of default ports to manage. 
-    * If not provided, it defaults to `[6277, 6274]`.
+    * `default_ports`: A list of default ports to manage. If not provided, it defaults to `[6277, 6274]`.
 
-* **`get_pid_by_port(port: int) -> Optional[int]`**: A static method that attempts to 
-* find the process ID (PID) listening on the given `port`. It uses platform-specific 
-  commands (`netstat`, `ss`, `lsof`). Returns the PID if found, otherwise `None`. 
+* **`get_pid_by_port(self, port: int) -> int | None`**: A static method that attempts to find   
+     a process ID (PID) listening on a given `port`.       
+*    It uses platform-specific commands (`netstat`, `ss`, `lsof`).       
+*    Returns the PID if found, otherwise `None`.    
 
-* **`kill_process(pid: int) -> bool`**: A static method that attempts to kill the process 
-  with the given `pid`. It uses platform-specific commands (`taskkill`, `kill -9`). 
+* **`kill_process(self, pid: int) -> bool`**: A static method that attempts to kill the process 
+  with the given `pid`.   
+* It uses platform-specific commands (`taskkill`, `kill -9`). 
 * Returns `True` if the process was successfully killed, `False` otherwise. 
 
-* **`release_all(self, ports: Optional[list[int]] = None) -> None`**: Releases all processes
-* listening on the specified `ports`.
-    * `ports` (`list[int]`, *optional*): A list of ports to release. If `None`, it uses the
-      `default_ports` defined during initialization.
-    * For each port, it first tries to get the PID and then attempts to kill the process. 
+* **`release_all(self, ports: list[int] | None = None) -> None`**: Releases all processes listening on the specified `ports`.   
+    * `ports`: A list of ports to release.   
+    * If `None`, it uses the `default_ports` defined during initialization.   
+    * For each port, it first tries to get the PID and then attempts to kill the process.       
     * It logs the actions and any errors encountered. Invalid port numbers in the provided list are skipped.
 
 #### Example Usage:
 
 ```python
-from src.nano_dev_utils.release_ports import PortsRelease
+import logging
+from nano_dev_utils import PortsRelease
+
+# in case you're interested in logging 
+logging.basicConfig(filename='port release.log',
+                    level=logging.INFO,  # specify here desire level, e.g. DEBUG etc.
+                    format='%(asctime)s - %(levelname)s: %(message)s',
+                    datefmt='%d-%m-%Y %H:%M:%S')
 
 # Create an instance with default ports
 port_releaser = PortsRelease()

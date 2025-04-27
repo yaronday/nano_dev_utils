@@ -26,7 +26,7 @@ This module provides a `Timer` class for measuring the execution time of code bl
 
 ```python
 import time
-from src.nano_dev_utils.timers import Timer
+from nano_dev_utils.timers import Timer
 
 timer = Timer(precision=6, verbose=True)
 
@@ -59,7 +59,7 @@ This module provides an `Importer` class for lazy loading and caching module imp
 #### Example Usage:
 
 ```python
-from src.nano_dev_utils.dynamic_importer import Importer
+from nano_dev_utils.dynamic_importer import Importer
 
 importer = Importer()
 

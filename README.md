@@ -12,13 +12,13 @@ This module provides a `Timer` class for measuring the execution time of code bl
 
 * **`__init__(self, precision=4, verbose=False)`**: Initializes a `Timer` instance.
     * `precision` (int, optional): The number of decimal places to record and 
-    * display time durations. Defaults to 4.
-    * `verbose` (bool, optional): If `True`, the function's arguments and keyword
-    * arguments will be included in the printed timing output. Defaults to `False`.
+       display time durations. Defaults to 4.
+    * `verbose` (bool, optional): If `True`, the function's arguments (args) and keyword arguments (kwargs) 
+       will be included in the printed timing output. Defaults to `False`.
 
 * **`timeit(self, func)`**: A decorator that measures the execution time of the decorated function.
     * When the decorated function is called, this decorator records the start and end times,
-    * calculates the total execution time, prints the function name and execution time 
+    * calculates the total execution time, prints the function name and execution time. 
     * (optionally including arguments if `verbose` is `True`), and returns the result of the original function.
 
 #### Example Usage:
@@ -87,16 +87,16 @@ listening on specified TCP ports. It supports Windows, Linux, and macOS.
 
 * **`get_pid_by_port(port: int) -> Optional[int]`**: A static method that attempts to 
 * find the process ID (PID) listening on the given `port`. It uses platform-specific 
-* commands (`netstat`, `ss`, `lsof`). Returns the PID if found, otherwise `None`. 
+  commands (`netstat`, `ss`, `lsof`). Returns the PID if found, otherwise `None`. 
 
 * **`kill_process(pid: int) -> bool`**: A static method that attempts to kill the process 
-* with the given `pid`. It uses platform-specific commands (`taskkill`, `kill -9`). 
+  with the given `pid`. It uses platform-specific commands (`taskkill`, `kill -9`). 
 * Returns `True` if the process was successfully killed, `False` otherwise. 
 
 * **`release_all(self, ports: Optional[list[int]] = None) -> None`**: Releases all processes
 * listening on the specified `ports`.
     * `ports` (`list[int]`, *optional*): A list of ports to release. If `None`, it uses the
-    * `default_ports` defined during initialization.
+      `default_ports` defined during initialization.
     * For each port, it first tries to get the PID and then attempts to kill the process. 
     * It logs the actions and any errors encountered. Invalid port numbers in the provided list are skipped.
 

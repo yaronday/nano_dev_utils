@@ -1,7 +1,6 @@
 [project]
 name = "nano_dev_utils"
-version = "0.3.2"
-url = "https://github.com/yaronday/nano_utils"
+version = "0.3.3"
 
 authors = [
   { name="Yaron Dayan", email="yaronday77@gmail.com" },

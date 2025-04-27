@@ -15,7 +15,6 @@ This module provides a `Timer` class for measuring the execution time of code bl
     * display time durations. Defaults to 4.
     * `verbose` (bool, optional): If `True`, the function's arguments and keyword
     * arguments will be included in the printed timing output. Defaults to `False`.
-    * `timing_records` (list): A list to store the recorded timing durations as formatted strings.
 
 * **`timeit(self, func)`**: A decorator that measures the execution time of the decorated function.
     * When the decorated function is called, this decorator records the start and end times,

@@ -17,12 +17,14 @@ class Importer:
         if module_name in self.imported_modules:
             return self.imported_modules[module_name]
 
+        lib_mod = f'{library}.{module_name}'
+
         try:
-            module = importlib.import_module(f"{library}.{module_name}")
+            module = importlib.import_module(lib_mod)
             self.imported_modules[module_name] = module
             return module
         except ModuleNotFoundError as e:
-            raise ImportError(f"Could not import {library}.{module_name}") from e
+            raise ImportError(f'Could not import {lib_mod}') from e
 
 
 

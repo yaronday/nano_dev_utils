@@ -1,7 +1,6 @@
 import platform
 import subprocess
 import logging
-from typing import Optional
 
 
 logging.basicConfig(filename='port release.log',
@@ -15,7 +14,7 @@ INSPECTOR_CLIENT = 6274
 
 
 class PortsRelease:
-    def __init__(self, default_ports: Optional[list[int]] = None):
+    def __init__(self, default_ports: list[int] | None = None):
         self.default_ports: list[int] = default_ports \
             if default_ports is not None else [PROXY_SERVER, INSPECTOR_CLIENT]
 
@@ -36,8 +35,8 @@ class PortsRelease:
         return f'Invalid port number: {port}. Skipping.'
 
     @staticmethod
-    def _log_terminate_failed(pid: int, port: Optional[int] = None,
-                              error: Optional[str] = None) -> str:
+    def _log_terminate_failed(pid: int, port: int | None = None,
+                              error: str | None = None) -> str:
         base_msg = f'Failed to terminate process {pid}'
         if port:
             base_msg += f' (on port {port})'
@@ -61,15 +60,15 @@ class PortsRelease:
     def _log_unsupported_os() -> str:
         return f'Unsupported OS: {platform.system()}'
 
-    def get_pid_by_port(self, port: int) -> Optional[int]:
+    def get_pid_by_port(self, port: int) -> int | None:
         """Gets the process ID (PID) listening on the specified port."""
         system = platform.system()
         try:
-            cmd: Optional[str] = {
+            cmd: str = {
                 "Windows": f"netstat -ano | findstr :{port}",
                 "Linux": f"ss -lntp | grep :{port}",
                 "Darwin": f"lsof -i :{port}",
-            }.get(system)
+            }.get(system, "")
             if not cmd:
                 lgr.error(self._log_unsupported_os())
                 return None
@@ -114,11 +113,11 @@ class PortsRelease:
     def kill_process(self, pid: int) -> bool:
         """Kills the process with the specified PID."""
         try:
-            cmd: Optional[str] = {
+            cmd: str = {
                 'Windows': f'taskkill /F /PID {pid}',
                 'Linux': f'kill -9 {pid}',
                 'Darwin': f'kill -9 {pid}',
-            }.get(platform.system())
+            }.get(platform.system(), "")  # fallback to empty string
             if not cmd:
                 lgr.error(self._log_unsupported_os())
                 return False
@@ -133,7 +132,7 @@ class PortsRelease:
             lgr.error(self._log_unexpected_error(e))
             return False
 
-    def release_all(self, ports: Optional[list[int]] = None) -> None:
+    def release_all(self, ports: list[int] | None = None) -> None:
         try:
             ports_to_release: list[int] = self.default_ports if ports is None else ports
 
@@ -142,7 +141,7 @@ class PortsRelease:
                     lgr.error(self._log_invalid_port(port))
                     continue
 
-                pid: Optional[int] = self.get_pid_by_port(port)
+                pid: int | None = self.get_pid_by_port(port)
                 if pid is None:
                     lgr.info(self._log_no_process(port))
                     continue

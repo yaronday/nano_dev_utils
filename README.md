@@ -108,9 +108,9 @@ It supports Windows, Linux, and macOS.
 import logging
 from nano_dev_utils import PortsRelease
 
-# in case you're interested in logging 
+# For configuration of logging level and format (supported already):  
 logging.basicConfig(filename='port release.log',
-                    level=logging.INFO,  # specify here desire level, e.g. DEBUG etc.
+                    level=logging.INFO,  # DEBUG, WARNING, ERROR, CRITICAL 
                     format='%(asctime)s - %(levelname)s: %(message)s',
                     datefmt='%d-%m-%Y %H:%M:%S')
 

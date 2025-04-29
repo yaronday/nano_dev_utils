@@ -11,8 +11,11 @@ INSPECTOR_CLIENT = 6274
 
 class PortsRelease:
     def __init__(self, default_ports: list[int] | None = None):
-        self.default_ports: list[int] = default_ports \
-            if default_ports is not None else [PROXY_SERVER, INSPECTOR_CLIENT]
+        self.default_ports: list[int] = (
+            default_ports
+            if default_ports is not None
+            else [PROXY_SERVER, INSPECTOR_CLIENT]
+        )
 
     @staticmethod
     def _log_process_found(port: int, pid: int) -> str:
@@ -31,8 +34,9 @@ class PortsRelease:
         return f'Invalid port number: {port}. Skipping.'
 
     @staticmethod
-    def _log_terminate_failed(pid: int, port: int | None = None,
-                              error: str | None = None) -> str:
+    def _log_terminate_failed(
+        pid: int, port: int | None = None, error: str | None = None
+    ) -> str:
         base_msg = f'Failed to terminate process {pid}'
         if port:
             base_msg += f' (on port {port})'
@@ -61,17 +65,17 @@ class PortsRelease:
         system = platform.system()
         try:
             cmd: str = {
-                "Windows": f"netstat -ano | findstr :{port}",
-                "Linux": f"ss -lntp | grep :{port}",
-                "Darwin": f"lsof -i :{port}",
-            }.get(system, "")
+                'Windows': f'netstat -ano | findstr :{port}',
+                'Linux': f'ss -lntp | grep :{port}',
+                'Darwin': f'lsof -i :{port}',
+            }.get(system, '')
             if not cmd:
                 lgr.error(self._log_unsupported_os())
                 return None
 
-            process = subprocess.Popen(cmd, shell=True,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE)
+            process = subprocess.Popen(
+                cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
             output, error = process.communicate()
             if error:
                 lgr.error(self._log_cmd_error(error))
@@ -81,21 +85,21 @@ class PortsRelease:
             for line in lines:
                 if str(port) in line:
                     parts: list[str] = line.split()
-                    if system == "Windows" and len(parts) > 4:
+                    if system == 'Windows' and len(parts) > 4:
                         try:
                             return int(parts[4])
                         except ValueError:
                             lgr.error(self._log_line_parse_failed(line))
                             return None
-                    elif system == "Linux":
+                    elif system == 'Linux':
                         for part in parts:
-                            if "pid=" in part:
+                            if 'pid=' in part:
                                 try:
-                                    return int(part.split("=")[1])
+                                    return int(part.split('=')[1])
                                 except ValueError:
                                     lgr.error(self._log_line_parse_failed(line))
                                     return None
-                    elif system == "Darwin" and len(parts) > 1:
+                    elif system == 'Darwin' and len(parts) > 1:
                         try:
                             return int(parts[1])
                         except ValueError:
@@ -113,7 +117,7 @@ class PortsRelease:
                 'Windows': f'taskkill /F /PID {pid}',
                 'Linux': f'kill -9 {pid}',
                 'Darwin': f'kill -9 {pid}',
-            }.get(platform.system(), "")  # fallback to empty string
+            }.get(platform.system(), '')  # fallback to empty string
             if not cmd:
                 lgr.error(self._log_unsupported_os())
                 return False

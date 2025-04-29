@@ -7,9 +7,9 @@ from .timers import Timer
 from .release_ports import PortsRelease, PROXY_SERVER, INSPECTOR_CLIENT
 
 __all__ = [
-    "Importer",
-    "Timer",
-    "PortsRelease",
-    "PROXY_SERVER",
-    "INSPECTOR_CLIENT",
+    'Importer',
+    'Timer',
+    'PortsRelease',
+    'PROXY_SERVER',
+    'INSPECTOR_CLIENT',
 ]

@@ -2,10 +2,9 @@
 Copyright (c) 2025 Yaron Dayan
 """
 
-from .testing_timer import TestTimer
-from .testing_dynamic_importer import TestImporter
-from .testing_release_ports import (TestPortsRelease,
-                                    PROXY_SERVER, CLIENT_PORT)
+from .test_timer import TestTimer
+from .test_dynamic_importer import TestImporter
+from .test_release_ports import TestPortsRelease, PROXY_SERVER, CLIENT_PORT
 
 __all__ = [
     TestTimer,

@@ -6,7 +6,6 @@ from src.nano_dev_utils.timers import Timer
 
 
 class TestTimer(TestCase):
-
     def test_initialization(self):
         timer = Timer()
         self.assertEqual(timer.precision, 4)
@@ -23,10 +22,10 @@ class TestTimer(TestCase):
 
         @timer.timeit
         def sample_function():
-            return "result"
+            return 'result'
 
         result = sample_function()
-        self.assertEqual(result, "result")
+        self.assertEqual(result, 'result')
         mock_perf_counter_ns.assert_any_call()
         mock_print.assert_called_once_with('sample_function took 923.47 [μs]')
 
@@ -38,12 +37,12 @@ class TestTimer(TestCase):
 
         @timer.timeit
         def yet_another_function():
-            return "yet another result"
+            return 'yet another result'
 
         result = yet_another_function()
-        self.assertEqual(result, "yet another result")
+        self.assertEqual(result, 'yet another result')
         mock_perf_counter_ns.assert_any_call()
-        mock_print.assert_called_once_with("yet_another_function () {} took 0.50 [ns]")
+        mock_print.assert_called_once_with('yet_another_function () {} took 0.50 [ns]')
 
     @patch('builtins.print')
     def test_multithreaded_timing(self, mock_print):
@@ -87,7 +86,9 @@ class TestTimer(TestCase):
         output = mock_print.call_args[0][0]
         self.assertIn('(1, 2)', output)  # checking positional args
         self.assertIn("'c': 4", output)  # checking kwargs
-        mock_print.assert_called_once_with("func_with_args (1, 2) {'c': 4} took 42.3456 [μs]")
+        mock_print.assert_called_once_with(
+            "func_with_args (1, 2) {'c': 4} took 42.3456 [μs]"
+        )
         self.assertEqual(res, 7)  # checking returned value preservation
 
     @patch('builtins.print')
@@ -120,12 +121,12 @@ class TestTimer(TestCase):
     def test_unit_scaling_logic(self, mock_print, mock_perf_counter_ns):
         """Test the time unit selection logic directly"""
         test_cases = [
-            (999, "ns"),  # < 1μs
-            (1000, "μs"),  # 1μs
-            (999999, "μs"),  # < 1ms
-            (1000000, "ms"),  # 1ms
-            (999999999, "ms"),  # < 1s
-            (1000000000, "s")  # 1s
+            (999, 'ns'),  # < 1μs
+            (1000, 'μs'),  # 1μs
+            (999999, 'μs'),  # < 1ms
+            (1000000, 'ms'),  # 1ms
+            (999999999, 'ms'),  # < 1s
+            (1000000000, 's'),  # 1s
         ]
 
         for ns, expected_unit in test_cases:

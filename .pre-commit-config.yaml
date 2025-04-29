@@ -1,0 +1,32 @@
+fail_fast: true
+
+repos:
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier (local)
+        entry: bash ~/my-hooks/run_prettier.sh
+        language: system
+        types_or: [yaml, json5]
+        additional_dependencies: []
+        args: [--write]
+
+      - id: ruff
+        name: ruff (local)
+        entry: bash ~/my-hooks/run_ruff.sh
+        language: system
+        args: [--fix, --exit-non-zero-on-fix]
+        files: \.py$
+
+      - id: ruff-format
+        name: ruff-format (local)
+        entry: bash ~/my-hooks/run_ruff-format.sh
+        language: system
+        files: \.py$
+
+      - id: pyright
+        name: pyright (local)
+        entry: bash ~/my-hooks/run_pyright.sh
+        language: system
+        files: \.py$
+        exclude: ^tests/

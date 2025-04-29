@@ -8,7 +8,7 @@ CLIENT_PORT = rp.INSPECTOR_CLIENT
 
 
 class TestPortsRelease(unittest.TestCase):
-    PORTS_RELEASE_OBJ = 'testing_release_ports.rp.PortsRelease'
+    PORTS_RELEASE_OBJ = 'test_release_ports.rp.PortsRelease'
 
     def setUp(self):
         self.ports_release = rp.PortsRelease()
@@ -28,16 +28,17 @@ class TestPortsRelease(unittest.TestCase):
         """Temporarily remove any file handlers from the root logger"""
         root_logger = logging.getLogger()
         existing_file_handlers = [
-            handler for handler in root_logger.handlers
+            handler
+            for handler in root_logger.handlers
             if isinstance(handler, logging.FileHandler)
         ]
         for handler in existing_file_handlers:
             root_logger.removeHandler(handler)
             handler.close()
 
-    def _mock_pid_retrieval(self, mock_popen: unittest.mock.MagicMock,
-                            entry: dict,
-                            port: int) -> (int, bytes):
+    def _mock_pid_retrieval(
+        self, mock_popen: unittest.mock.MagicMock, entry: dict, port: int
+    ) -> (int, bytes):
         mock_process = unittest.mock.MagicMock()
         encoded_entry = self._encode_dict(entry)
         mock_process.communicate.return_value = (encoded_entry, '')
@@ -66,14 +67,17 @@ class TestPortsRelease(unittest.TestCase):
                     'peer_addr_port': f'{peer_addr}:{peer_port}',
                     'process_name': 'users:python3',
                     'pid': f'pid={_pid}',
-                    'fd': f'fd={fd}'
+                    'fd': f'fd={fd}',
                 }
 
                 pid, _ = self._mock_pid_retrieval(mock_popen, ss_entry, port)
                 self.assertEqual(pid, _pid)
-                mock_popen.assert_called_once_with(f'ss -lntp | grep :{port}',
-                                                   shell=True, stdout=unittest.mock.ANY,
-                                                   stderr=unittest.mock.ANY)
+                mock_popen.assert_called_once_with(
+                    f'ss -lntp | grep :{port}',
+                    shell=True,
+                    stdout=unittest.mock.ANY,
+                    stderr=unittest.mock.ANY,
+                )
 
     def test_get_pid_by_port_windows_success(self):
         with patch('platform.system', return_value='Windows'):
@@ -90,9 +94,12 @@ class TestPortsRelease(unittest.TestCase):
 
                 pid, _ = self._mock_pid_retrieval(mock_popen, netstat_entry, port)
                 self.assertEqual(pid, _pid)
-                mock_popen.assert_called_once_with(f'netstat -ano | findstr :{port}',
-                                                   shell=True, stdout=unittest.mock.ANY,
-                                                   stderr=unittest.mock.ANY)
+                mock_popen.assert_called_once_with(
+                    f'netstat -ano | findstr :{port}',
+                    shell=True,
+                    stdout=unittest.mock.ANY,
+                    stderr=unittest.mock.ANY,
+                )
 
     def test_get_pid_by_port_darwin_success(self):
         with patch('platform.system', return_value='Darwin'):
@@ -109,21 +116,25 @@ class TestPortsRelease(unittest.TestCase):
                     'device': '0xabcdef0123456789',  # Kernel device identifier
                     'size_off': '0t0',  # Size/offset (0 for sockets)
                     'protocol': 'TCP',  # Protocol (TCP/UDP)
-                    'name': f'*:{port} (LISTEN)'  # Combined address & state (optional)
+                    'name': f'*:{port} (LISTEN)',  # Combined address & state (optional)
                 }
 
                 pid, _ = self._mock_pid_retrieval(mock_popen, lsof_entry, port)
                 self.assertEqual(pid, _pid)
-                mock_popen.assert_called_once_with(f'lsof -i :{port}',
-                                                   shell=True, stdout=unittest.mock.ANY,
-                                                   stderr=unittest.mock.ANY)
+                mock_popen.assert_called_once_with(
+                    f'lsof -i :{port}',
+                    shell=True,
+                    stdout=unittest.mock.ANY,
+                    stderr=unittest.mock.ANY,
+                )
 
     def test_get_pid_by_port_unsupported_os(self):
         with patch('platform.system', return_value='UnsupportedOS'):
             pid = self.ports_release.get_pid_by_port(1234)
             self.assertIsNone(pid)
-            self.mock_logger.error.assert_called_once_with(self.ports_release.
-                                                           _log_unsupported_os())
+            self.mock_logger.error.assert_called_once_with(
+                self.ports_release._log_unsupported_os()
+            )
 
     def test_get_pid_by_port_no_process(self):
         with patch('platform.system', return_value='Linux'):
@@ -143,7 +154,9 @@ class TestPortsRelease(unittest.TestCase):
                 mock_popen.return_value = mock_process
                 pid = self.ports_release.get_pid_by_port(80)
                 self.assertIsNone(pid)
-                self.mock_logger.error.assert_called_once_with(f'Error running command: {err}')
+                self.mock_logger.error.assert_called_once_with(
+                    f'Error running command: {err}'
+                )
 
     def test_get_pid_by_port_parse_error(self):
         with patch('platform.system', return_value='Linux'):
@@ -163,23 +176,25 @@ class TestPortsRelease(unittest.TestCase):
                     'peer_addr_port': f'{peer_addr}:{peer_port}',
                     'process_name': 'users:python3',
                     'pid': f'pid={_pid}',
-                    'fd': f'fd={fd}'
+                    'fd': f'fd={fd}',
                 }
 
                 pid, enc_entry = self._mock_pid_retrieval(mock_popen, ss_entry, port)
                 self.assertIsNone(pid)
                 self.mock_logger.error.assert_called_once_with(
-                    f'Could not parse PID from line: {enc_entry.decode()}')
+                    f'Could not parse PID from line: {enc_entry.decode()}'
+                )
 
     def test_get_pid_by_port_unexpected_exception(self):
         with patch('platform.system', return_value='Linux'):
-            err = Exception("Unexpected")
+            err = Exception('Unexpected')
             with patch('subprocess.Popen', side_effect=err):
                 port = 1234
                 pid = self.ports_release.get_pid_by_port(port)
                 self.assertIsNone(pid)
-                self.mock_logger.error.assert_called_once_with(f'An unexpected '
-                                                               f'error occurred: {err}')
+                self.mock_logger.error.assert_called_once_with(
+                    f'An unexpected error occurred: {err}'
+                )
 
     def test_kill_process_success(self):
         with patch('platform.system', return_value='Linux'):
@@ -191,8 +206,9 @@ class TestPortsRelease(unittest.TestCase):
                 mock_popen.return_value = mock_process
                 result = self.ports_release.kill_process(port)
                 self.assertTrue(result)
-                mock_popen.assert_called_once_with(f'kill -9 {port}',
-                                                   shell=True, stderr=unittest.mock.ANY)
+                mock_popen.assert_called_once_with(
+                    f'kill -9 {port}', shell=True, stderr=unittest.mock.ANY
+                )
 
     def test_kill_process_fail(self):
         pid = 1234
@@ -205,28 +221,30 @@ class TestPortsRelease(unittest.TestCase):
                 mock_popen.return_value = mock_process
                 result = self.ports_release.kill_process(pid)
                 self.assertFalse(result)
-                self.mock_logger.error.assert_called_once_with(self.ports_release.
-                                                               _log_terminate_failed(pid=pid, error=err))
+                self.mock_logger.error.assert_called_once_with(
+                    self.ports_release._log_terminate_failed(pid=pid, error=err)
+                )
 
     def test_kill_process_unsupported_os(self):
         with patch('platform.system', return_value='UnsupportedOS'):
             pid = 9999
             result = self.ports_release.kill_process(pid)
             self.assertFalse(result)
-            self.mock_logger.error.assert_called_once_with(self.ports_release.
-                                                           _log_unsupported_os())
+            self.mock_logger.error.assert_called_once_with(
+                self.ports_release._log_unsupported_os()
+            )
 
     def test_kill_process_unexpected_exception(self):
-        err = Exception("Another error")
-        with (patch('platform.system', return_value='Linux')):
-            with patch('subprocess.Popen',
-                       side_effect=err):
+        err = Exception('Another error')
+        with patch('platform.system', return_value='Linux'):
+            with patch('subprocess.Popen', side_effect=err):
                 pid = 4321
                 result = self.ports_release.kill_process(pid)
                 self.assertFalse(result)
-                self.mock_logger.error.assert_called_once_with(self.ports_release.
-                                                               _log_unexpected_error(err))
-                
+                self.mock_logger.error.assert_called_once_with(
+                    self.ports_release._log_unexpected_error(err)
+                )
+
     @patch(f'{PORTS_RELEASE_OBJ}.get_pid_by_port')
     @patch(f'{PORTS_RELEASE_OBJ}.kill_process')
     def test_release_all_default_ports_success(self, mock_kill, mock_get_pid):
@@ -238,37 +256,42 @@ class TestPortsRelease(unittest.TestCase):
         mock_kill.assert_has_calls([call(pid1), call(pid2)])
         self.assertEqual(mock_get_pid.call_count, 2)
         self.assertEqual(mock_kill.call_count, 2)
-        self.mock_logger.info.assert_any_call(self.ports_release.
-                                              _log_process_found(PROXY_SERVER, pid1))
-        self.mock_logger.info.assert_any_call(self.ports_release.
-                                              _log_process_terminated(pid1, PROXY_SERVER))
-        self.mock_logger.info.assert_any_call(self.ports_release.
-                                              _log_process_found(CLIENT_PORT, pid2))
-        self.mock_logger.info.assert_any_call(self.ports_release.
-                                              _log_process_terminated(pid2, CLIENT_PORT))
+        self.mock_logger.info.assert_any_call(
+            self.ports_release._log_process_found(PROXY_SERVER, pid1)
+        )
+        self.mock_logger.info.assert_any_call(
+            self.ports_release._log_process_terminated(pid1, PROXY_SERVER)
+        )
+        self.mock_logger.info.assert_any_call(
+            self.ports_release._log_process_found(CLIENT_PORT, pid2)
+        )
+        self.mock_logger.info.assert_any_call(
+            self.ports_release._log_process_terminated(pid2, CLIENT_PORT)
+        )
 
     def test_release_all_invalid_port(self):
         with patch(f'{self.PORTS_RELEASE_OBJ}.get_pid_by_port') as mock_get_pid:
             with patch(f'{self.PORTS_RELEASE_OBJ}.kill_process') as mock_kill:
                 # Make get_pid_by_port return None for the valid ports in this test
-                ports = ["invalid", 1234, 5678]
+                ports = ['invalid', 1234, 5678]
                 mock_get_pid.side_effect = [None, None]
                 self.ports_release.release_all(ports=ports)
                 mock_get_pid.assert_any_call(ports[1])
                 mock_get_pid.assert_any_call(ports[2])
                 self.assertEqual(mock_get_pid.call_count, 2)
                 mock_kill.assert_not_called()
-                self.mock_logger.error.assert_called_once_with(self.ports_release.
-                                                               _log_invalid_port(ports[0]))
+                self.mock_logger.error.assert_called_once_with(
+                    self.ports_release._log_invalid_port(ports[0])
+                )
 
     def test_release_all_unexpected_exception(self):
-        err = Exception("Release all error")
-        with patch(f'{self.PORTS_RELEASE_OBJ}.'
-                   f'get_pid_by_port', side_effect=err):
+        err = Exception('Release all error')
+        with patch(f'{self.PORTS_RELEASE_OBJ}.get_pid_by_port', side_effect=err):
             port = 9010
             self.ports_release.release_all(ports=[port])
-            self.mock_logger.error.assert_called_once_with(self.ports_release.
-                                                           _log_unexpected_error(err))
+            self.mock_logger.error.assert_called_once_with(
+                self.ports_release._log_unexpected_error(err)
+            )
             self.ports_release.get_pid_by_port.assert_called_once_with(port)
 
 

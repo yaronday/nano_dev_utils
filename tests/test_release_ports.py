@@ -8,7 +8,7 @@ CLIENT_PORT = rp.INSPECTOR_CLIENT
 
 
 class TestPortsRelease(unittest.TestCase):
-    PORTS_RELEASE_OBJ = 'test_release_ports.rp.PortsRelease'
+    PORTS_RELEASE_OBJ = 'tests.test_release_ports.rp.PortsRelease'
 
     def setUp(self):
         self.ports_release = rp.PortsRelease()

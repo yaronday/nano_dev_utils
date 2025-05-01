@@ -128,4 +128,4 @@ port_releaser.release_all()
 
 ## License
 This project is licensed under the MIT License. 
-See [LICENSE](LICENSE.md) for details.
+See [LICENSE](LICENSE) for details.

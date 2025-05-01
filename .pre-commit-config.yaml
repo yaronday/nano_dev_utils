@@ -29,4 +29,3 @@ repos:
         entry: bash ~/my-hooks/run_pyright.sh
         language: system
         files: \.py$
-        exclude: ^tests/

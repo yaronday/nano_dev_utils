@@ -4,12 +4,11 @@ Copyright (c) 2025 Yaron Dayan
 
 from .test_timer import TestTimer
 from .test_dynamic_importer import TestImporter
-from .test_release_ports import TestPortsRelease, PROXY_SERVER, CLIENT_PORT
+from .test_release_ports import PROXY_SERVER, CLIENT_PORT
 
 __all__ = [
-    TestTimer,
-    TestImporter,
-    TestPortsRelease,
-    PROXY_SERVER,
-    CLIENT_PORT,
+    'TestTimer',
+    'TestImporter',
+    'PROXY_SERVER',
+    'CLIENT_PORT',
 ]

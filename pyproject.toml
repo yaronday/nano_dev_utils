@@ -12,6 +12,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
+license = { text = "MIT" }
 
 [project.optional-dependencies]
 test = [
@@ -19,13 +20,12 @@ test = [
     "pytest-mock>=3.14.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/yaronday/nano_utils"
+Issues = "https://github.com/yaronday/nano_utils/issues"
+
 [build-system]
 requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
 
-license = { text = "MIT" }
-license-files = ["LICENSE.md"]
 
-[project.urls]
-Homepage = "https://github.com/yaronday/nano_utils"
-Issues = "https://github.com/yaronday/nano_utils/issues"

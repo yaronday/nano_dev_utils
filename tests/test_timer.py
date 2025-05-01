@@ -1,4 +1,3 @@
-from unittest.mock import patch
 import threading
 import time
 from src.nano_dev_utils.timers import Timer
@@ -14,10 +13,9 @@ def test_initialization():
     assert timer_custom.verbose
 
 
-@patch('time.perf_counter_ns')
-@patch('builtins.print')
-def test_timeit_simple(mock_print, mock_perf_counter_ns):
-    mock_perf_counter_ns.side_effect = [0, 9.23467e5]
+def test_timeit_simple(mocker):
+    mock_print = mocker.patch('builtins.print')
+    mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, 9.23467e5])
     timer = Timer(precision=2)
 
     @timer.timeit
@@ -26,14 +24,13 @@ def test_timeit_simple(mock_print, mock_perf_counter_ns):
 
     result = sample_function()
     assert result == 'result'
-    mock_perf_counter_ns.assert_any_call()
+    mock_time.assert_any_call()
     mock_print.assert_called_once_with('sample_function took 923.47 [μs]')
 
 
-@patch('time.perf_counter_ns')
-@patch('builtins.print')
-def test_timeit_no_args_kwargs(mock_print, mock_perf_counter_ns):
-    mock_perf_counter_ns.side_effect = [1.0, 1.5]
+def test_timeit_no_args_kwargs(mocker):
+    mock_print = mocker.patch('builtins.print')
+    mock_time = mocker.patch('time.perf_counter_ns', side_effect=[1.0, 1.5])
     timer = Timer(precision=2, verbose=True)
 
     @timer.timeit
@@ -42,13 +39,13 @@ def test_timeit_no_args_kwargs(mock_print, mock_perf_counter_ns):
 
     result = yet_another_function()
     assert result == 'yet another result'
-    mock_perf_counter_ns.assert_any_call()
+    mock_time.assert_any_call()
     mock_print.assert_called_once_with('yet_another_function () {} took 0.50 [ns]')
 
 
-@patch('builtins.print')
-def test_multithreaded_timing(mock_print):
+def test_multithreaded_timing(mocker):
     """Test timer works correctly across threads"""
+    mock_print = mocker.patch('builtins.print')
     timer = Timer()
     results = []
 
@@ -73,12 +70,11 @@ def test_multithreaded_timing(mock_print):
     assert len(set(results)) == 3
 
 
-@patch('time.perf_counter_ns')
-@patch('builtins.print')
-def test_verbose_mode(mock_print, mock_perf_counter_ns):
+def test_verbose_mode(mocker):
     """Test that verbose mode includes positional and
     keyword arguments in output and preserves the wrapped func result"""
-    mock_perf_counter_ns.side_effect = [1e4, 5.23456e4]
+    mock_print = mocker.patch('builtins.print')
+    mocker.patch('time.perf_counter_ns', side_effect=[1e4, 5.23456e4])
     verbose_timer = Timer(verbose=True)
 
     @verbose_timer.timeit
@@ -95,9 +91,9 @@ def test_verbose_mode(mock_print, mock_perf_counter_ns):
     assert res == 7  # checking returned value preservation
 
 
-@patch('builtins.print')
-def test_nested_timers(mock_print):
+def test_nested_timers(mocker):
     """Test that nested timers work correctly"""
+    mock_print = mocker.patch('builtins.print')
     timer = Timer()
 
     @timer.timeit
@@ -121,10 +117,10 @@ def test_nested_timers(mock_print):
     assert outer_time > inner_time
 
 
-@patch('time.perf_counter_ns')
-@patch('builtins.print')
-def test_unit_scaling_logic(mock_print, mock_perf_counter_ns):
+def test_unit_scaling(mocker):
     """Test the time unit selection logic directly"""
+    mock_print = mocker.patch('builtins.print')
+
     boundary_cases = [
         (1e3 - 1, 'ns'),
         (1e3, 'μs'),
@@ -135,7 +131,7 @@ def test_unit_scaling_logic(mock_print, mock_perf_counter_ns):
     ]
 
     for ns, expected_unit in boundary_cases:
-        mock_perf_counter_ns.side_effect = [0, ns]
+        mocker.patch('time.perf_counter_ns', side_effect=[0, ns])
         timer = Timer(precision=2)
 
         @timer.timeit

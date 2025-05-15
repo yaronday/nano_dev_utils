@@ -1,6 +1,6 @@
 [project]
 name = "nano_dev_utils"
-version = "0.5.6"
+version = "0.5.7"
 
 authors = [
   { name="Yaron Dayan", email="yaronday77@gmail.com" },
@@ -32,5 +32,3 @@ license = "https://github.com/yaronday/nano_dev_utils/blob/master/LICENSE"
 requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build]
-include = ["LICENSE"]

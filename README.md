@@ -16,10 +16,12 @@ This module provides a `Timer` class for measuring the execution time of code bl
     * `verbose`: Optionally displays the function's positional arguments (args) and keyword arguments (kwargs).       
        Defaults to `False`.
 
-* **`timeit(self, func: Callable[P, R]) -> Callable[P, R]`**:   
+* **`timeit(
+        self, iterations: int = 1
+    ) -> Callable[[Callable[P, R]], Callable[P, R | None]]`**:   
       Decorator that times function execution with automatic unit scaling.   
     * When the decorated function is called, this decorator records the start and end times,   
-      calculates the total execution time, prints the function name and execution    
+      calculates the average execution time, prints the function name and execution    
       time (optionally including arguments), and returns the result of the original function.
 
 #### Example Usage:
@@ -31,7 +33,7 @@ from nano_dev_utils.timers import Timer
 timer = Timer(precision=6, verbose=True)
 
 
-@timer.timeit
+@timer.timeit()
 def my_function(a, b=10):
   """A sample function."""
   time.sleep(0.1)

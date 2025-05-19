@@ -12,27 +12,38 @@ class Timer:
         self.verbose = verbose
         self.units = [(1e9, 's'), (1e6, 'ms'), (1e3, 'μs'), (1.0, 'ns')]
 
-    def timeit(self, func: Callable[P, R]) -> Callable[P, R]:
-        """Decorator that times function execution with automatic unit scaling."""
+    def timeit(
+        self, iterations: int = 1
+    ) -> Callable[[Callable[P, R]], Callable[P, R | None]]:
+        def decorator(func: Callable[P, R]) -> Callable[P, R | None]:
+            """Decorator that times function execution with automatic unit scaling and averaging."""
 
-        @wraps(func)
-        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            start = time.perf_counter_ns()
-            result = func(*args, **kwargs)
-            elapsed = time.perf_counter_ns() - start
+            @wraps(func)
+            def wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
+                total_elapsed = 0
+                result = None
 
-            value = elapsed
-            unit = 'ns'
+                for _ in range(iterations):
+                    start = time.perf_counter_ns()
+                    result = func(*args, **kwargs)
+                    total_elapsed += time.perf_counter_ns() - start
 
-            for divisor, unit in self.units:
-                if elapsed >= divisor or unit == 'ns':
-                    value = elapsed / divisor
-                    break
+                avg_elapsed = total_elapsed / iterations
+                value = avg_elapsed
+                unit = 'ns'
 
-            extra_info = f'{args} {kwargs} ' if self.verbose else ''
-            print(
-                f'{func.__name__} {extra_info}took {value:.{self.precision}f} [{unit}]'
-            )
-            return result
+                for divisor, unit in self.units:
+                    if avg_elapsed >= divisor or unit == 'ns':
+                        value = avg_elapsed / divisor
+                        break
 
-        return wrapper
+                extra_info = f'{args} {kwargs} ' if self.verbose else ''
+                iter_info = f' (avg over {iterations} runs)' if iterations > 1 else ''
+                print(
+                    f'{func.__name__} {extra_info}took {value:.{self.precision}f} [{unit}]{iter_info}'
+                )
+                return result
+
+            return wrapper
+
+        return decorator

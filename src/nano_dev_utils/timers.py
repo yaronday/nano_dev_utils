@@ -7,7 +7,7 @@ R = TypeVar('R')
 
 
 class Timer:
-    def __init__(self, precision=4, verbose=False):
+    def __init__(self, precision: int = 4, verbose: bool = False):
         self.precision = precision
         self.verbose = verbose
         self.units = [(1e9, 's'), (1e6, 'ms'), (1e3, 'μs'), (1.0, 'ns')]

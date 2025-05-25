@@ -24,7 +24,6 @@ class Timer:
             @wraps(func)
             def wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
                 total_elapsed_ns = 0
-                start_total = time.perf_counter()
                 result: R | None = None
 
                 for i in range(1, iterations + 1):
@@ -44,11 +43,11 @@ class Timer:
                                     f'{duration_s:.{self.precision}f}s)'
                                 )
                         else:
-                            total_duration = time.perf_counter() - start_total
-                            if total_duration > timeout:
+                            total_duration_s = total_elapsed_ns / 1e9
+                            if total_duration_s > timeout:
                                 raise TimeoutError(
                                     f'{func.__name__} exceeded {timeout:.{self.precision}f}s '
-                                    f'after {i} iterations (took {total_duration:.{self.precision}f}s)'
+                                    f'after {i} iterations (took {total_duration_s:.{self.precision}f}s)'
                                 )
 
                 avg_elapsed_ns = total_elapsed_ns / iterations

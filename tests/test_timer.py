@@ -1,5 +1,4 @@
 import threading
-import time
 import pytest
 from src.nano_dev_utils.timers import Timer
 
@@ -55,11 +54,6 @@ def test_multithreaded_timing(mocker):
         side_effect=[0, sim_time_ns] * num_of_threads,
         autospec=True,
     )
-    mocker.patch(
-        'time.perf_counter',
-        side_effect=[0.0, sim_time_us] * num_of_threads,
-        autospec=True,
-    )
 
     timer = Timer()
     results = []
@@ -108,6 +102,20 @@ def test_verbose_mode(mocker):
 
 def test_nested_timers(mocker):
     """Test that nested timers work correctly"""
+    outer_start = 1000
+    inner_start = 1100
+    inner_end = 1200
+    outer_end = 1300
+    mocker.patch(
+        'time.perf_counter_ns',
+        side_effect=[
+            outer_start,
+            inner_start,
+            inner_end,
+            outer_end,
+        ],
+    )
+
     mock_print = mocker.patch('builtins.print')
     timer = Timer()
 
@@ -115,7 +123,7 @@ def test_nested_timers(mocker):
     def outer():
         @timer.timeit()
         def inner():
-            time.sleep(0.1)
+            pass
 
         return inner()
 
@@ -126,10 +134,12 @@ def test_nested_timers(mocker):
     inner_output = mock_print.call_args_list[0][0][0]
     outer_output = mock_print.call_args_list[1][0][0]
 
-    inner_time = float(inner_output.split('took ')[1].split(' [')[0])
-    outer_time = float(outer_output.split('took ')[1].split(' [')[0])
+    inner_duration = float(inner_output.split('took ')[1].split(' [')[0])
+    outer_duration = float(outer_output.split('took ')[1].split(' [')[0])
 
-    assert outer_time > inner_time
+    assert inner_duration == inner_end - inner_start
+    assert outer_duration == outer_end - outer_start
+    assert outer_duration > inner_duration
 
 
 def test_unit_scaling(mocker):
@@ -176,13 +186,18 @@ def test_function_metadata_preserved():
 
 def test_timeit_with_iterations(mocker):
     mock_print = mocker.patch('builtins.print')
+
+    k = 3
+    stimes_ns = [0, 1e3, 0, 2e3, 0, 3e3]
     mock_time = mocker.patch(
-        'time.perf_counter_ns', side_effect=[0, 1000, 0, 2000, 0, 3000]
+        'time.perf_counter_ns',
+        side_effect=stimes_ns,
+        autospec=True,
     )
 
     timer = Timer(precision=2)
 
-    @timer.timeit(iterations=3)
+    @timer.timeit(iterations=k)
     def sample_function():
         return 'done'
 
@@ -192,38 +207,44 @@ def test_timeit_with_iterations(mocker):
     mock_time.assert_any_call()
 
     mock_print.assert_called_once_with(
-        'sample_function took 2.00 [μs] (avg. over 3 runs)'
+        f'sample_function took {sum(stimes_ns) / 3e3:.{timer.precision}f} [μs] (avg. over {k} runs)'
     )
 
 
 def test_timeout_single_iteration(mocker):
-    mock_perf_counter = mocker.patch('time.perf_counter', autospec=True)
-    current_time_s = 0.0
-    mock_perf_counter.side_effect = lambda: current_time_s
+    cfg_timeout_s = 0.1
+    duration_s = cfg_timeout_s + 0.1
+    current_time_ns = 0.0
+    duration_ns = duration_s * 1e9
+
+    mocker.patch(
+        'time.perf_counter_ns',
+        side_effect=[0.0, duration_ns],
+        autospec=True,
+    )
     timer = Timer(precision=6, verbose=True)
 
-    @timer.timeit(timeout=0.1)
+    @timer.timeit(timeout=cfg_timeout_s)
     def timed_function():
-        nonlocal current_time_s
-        current_time_s += 0.2
+        nonlocal current_time_ns
+        current_time_ns += duration_ns
 
     with pytest.raises(TimeoutError) as exc_info:
         timed_function()
 
-    assert 'took 0.200000s' in str(exc_info.value)
+    assert f'took {duration_s:.{timer.precision}f}s' in str(exc_info.value)
 
 
 def test_timeout_multiple_iterations(mocker):
-    stime_per_iter_ms = 300
-    stime_per_iter_s = stime_per_iter_ms / 1e3
+    sim_time_per_iter_s = 0.3
+    sim_time_per_iter_ns = sim_time_per_iter_s * 1e9
 
     k = 5
-
-    timeout_threshold = (k - 1) * stime_per_iter_s - 0.05
+    timeout_threshold = (k - 1) * sim_time_per_iter_s - 0.1
 
     mocker.patch(
-        'time.perf_counter',
-        side_effect=[stime_per_iter_s * count for count in range(k + 1)],
+        'time.perf_counter_ns',
+        side_effect=[sim_time_per_iter_ns * count for count in range(2 * k - 1)],
         autospec=True,
     )
 
@@ -234,10 +255,10 @@ def test_timeout_multiple_iterations(mocker):
         return f'Function completed in simulated {duration}s'
 
     with pytest.raises(TimeoutError) as exc_info:
-        func(stime_per_iter_s)
+        func(sim_time_per_iter_s)
 
     expected_timeout_val = f'{timeout_threshold:.{timer.precision}f}s'
-    expected_taken_val = f'{(stime_per_iter_s * (k - 1)):.{timer.precision}f}s'
+    expected_taken_val = f'{(sim_time_per_iter_s * (k - 1)):.{timer.precision}f}s'
 
     expected_message_template = (
         f'func exceeded {expected_timeout_val} after {k - 1} iterations '
@@ -253,7 +274,6 @@ def test_timeout_per_iteration(mocker):
     mocker.patch(
         'time.perf_counter_ns', side_effect=[0.0, sim_time_s * 1e9], autospec=True
     )
-    mocker.patch('time.perf_counter', side_effect=[0.0, sim_time_s], autospec=True)
 
     timer = Timer(precision=6, verbose=True)
 

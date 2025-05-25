@@ -1,5 +1,6 @@
 import threading
 import time
+import pytest
 from src.nano_dev_utils.timers import Timer
 
 
@@ -11,6 +12,10 @@ def test_initialization():
     timer_custom = Timer(precision=6, verbose=True)
     assert timer_custom.precision == 6
     assert timer_custom.verbose
+
+
+def long_running_function(duration: float) -> None:
+    time.sleep(duration)
 
 
 def test_timeit_simple(mocker):
@@ -177,5 +182,48 @@ def test_timeit_with_iterations(mocker):
     mock_time.assert_any_call()
 
     mock_print.assert_called_once_with(
-        'sample_function took 2.00 [μs] (avg over 3 runs)'
+        'sample_function took 2.00 [μs] (avg. over 3 runs)'
     )
+
+
+def test_timeout_single_iteration(mocker):
+    mock_perf_counter = mocker.patch('time.perf_counter', autospec=True)
+    current_time_s = 0.0
+    mock_perf_counter.side_effect = lambda: current_time_s
+    timer = Timer(precision=6, verbose=True)
+
+    @timer.timeit(timeout=0.1)
+    def timed_function():
+        nonlocal current_time_s
+        current_time_s += 0.20  # Simulate 0.2 seconds passing
+
+    with pytest.raises(TimeoutError) as exc_info:
+        timed_function()
+
+    assert "took 0.20s" in str(exc_info.value)
+
+
+def test_timeout_multiple_iterations():
+    timer = Timer(precision=6, verbose=True)
+
+    # Set a timeout of 0.5s for the total execution of 3 iterations
+    with pytest.raises(TimeoutError):
+        timed_function = timer.timeit(iterations=3, timeout=0.5)(long_running_function)
+        timed_function(0.3)  # Each iteration takes 0.3s, so total should exceed 0.5s
+
+
+def test_timeout_per_iteration():
+    timer = Timer(precision=6, verbose=True)
+
+    # Set a timeout of 0.1s per iteration
+    with pytest.raises(TimeoutError):
+        timed_function = timer.timeit(iterations=5, timeout=0.1, per_iteration=True)(long_running_function)
+        timed_function(0.2)  # Each iteration will exceed the 0.1s timeout
+
+
+def test_timeout_with_fast_function():
+    timer = Timer(precision=6, verbose=True)
+
+    # Test a fast function (should not raise TimeoutError)
+    timed_function = timer.timeit(timeout=1.0)(long_running_function)
+    timed_function(0.05)

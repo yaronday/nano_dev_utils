@@ -188,10 +188,10 @@ def test_timeit_with_iterations(mocker):
     mock_print = mocker.patch('builtins.print')
 
     k = 3
-    stimes_ns = [0, 1e3, 0, 2e3, 0, 3e3]
+    sim_times_ns = [0, 1e3, 0, 2e3, 0, 3e3]
     mock_time = mocker.patch(
         'time.perf_counter_ns',
-        side_effect=stimes_ns,
+        side_effect=sim_times_ns,
         autospec=True,
     )
 
@@ -207,7 +207,7 @@ def test_timeit_with_iterations(mocker):
     mock_time.assert_any_call()
 
     mock_print.assert_called_once_with(
-        f'sample_function took {sum(stimes_ns) / 3e3:.{timer.precision}f} [μs] (avg. over {k} runs)'
+        f'sample_function took {sum(sim_times_ns) / 3e3:.{timer.precision}f} [μs] (avg. over {k} runs)'
     )
 
 

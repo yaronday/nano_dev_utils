@@ -6,23 +6,33 @@ A collection of small Python utilities for developers.
 
 ### `timers.py`
 
-This module provides a `Timer` class for measuring the execution time of code blocks and functions.
+This module provides a `Timer` class for measuring the execution time of code blocks and functions with additional features like timeout control and multi-iteration averaging.
 
 #### `Timer` Class
 
 * **`__init__(self, precision: int = 4, verbose: bool = False)`**: Initializes a `Timer` instance.
-    * `precision`: The number of decimal places to record and    
-       display time durations. Defaults to 4.
-    * `verbose`: Optionally displays the function's positional arguments (args) and keyword arguments (kwargs).       
-       Defaults to `False`.
+    * `precision`: The number of decimal places to record and display time durations. Defaults to 4.
+    * `verbose`: Optionally displays the function's positional arguments (args) and keyword arguments (kwargs). Defaults to `False`.
 
 * **`timeit(
-        self, iterations: int = 1
+        self,
+        iterations: int = 1,
+        timeout: float | None = None,
+        per_iteration: bool = False
     ) -> Callable[[Callable[P, R]], Callable[P, R | None]]`**:   
-      Decorator that times function execution with automatic unit scaling.   
-    * When the decorated function is called, this decorator records the start and end times,   
-      calculates the average execution time, prints the function name and execution    
-      time (optionally including arguments), and returns the result of the original function.
+      Decorator that times function execution with advanced features:
+    * `iterations`: Number of times to run the function (for averaging). Defaults to 1.
+    * `timeout`: Maximum allowed execution time in seconds. When exceeded:
+        * Raises `TimeoutError` immediately
+        * **Warning:** The function execution will be aborted mid-operation
+        * No return value will be available if timeout occurs
+    * `per_iteration`: If True, applies timeout check to each iteration; otherwise checks total time across all iterations.
+    * Features:
+        * Records execution times
+        * Handles timeout conditions
+        * Calculates average execution time across iterations
+        * Prints the function name and execution time (with optional arguments)
+        * Returns the result of the original function (unless timeout occurs)
 
 #### Example Usage:
 
@@ -32,16 +42,22 @@ from nano_dev_utils.timers import Timer
 
 timer = Timer(precision=6, verbose=True)
 
-
+# Basic timing
 @timer.timeit()
 def my_function(a, b=10):
-  """A sample function."""
-  time.sleep(0.1)
-  return a + b
+    """A sample function."""
+    time.sleep(0.1)
+    return a + b
 
+# Advanced usage with timeout and iterations
+@timer.timeit(iterations=5, timeout=0.5, per_iteration=True)
+def critical_function(x):
+    """Function with timeout check per iteration."""
+    time.sleep(0.08)
+    return x * 2
 
-result = my_function(5, b=20)
-print(f"Result: {result}")
+result1 = my_function(5, b=20)  # Shows args/kwargs and timing
+result2 = critical_function(10)  # Runs 5 times with per-iteration timeout
 ```
 
 ### `dynamic_importer.py`

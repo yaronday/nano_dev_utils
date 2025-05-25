@@ -39,14 +39,16 @@ class Timer:
                             if duration_s > timeout:
                                 raise TimeoutError(
                                     f'{func.__name__} exceeded '
-                                    f'{timeout:.2f}s on iteration {i + 1} (took {duration_s:.2f}s)'
+                                    f'{timeout:.{self.precision}f}s on '
+                                    f'iteration {i + 1} (took '
+                                    f'{duration_s:.{self.precision}f}s)'
                                 )
                         else:
                             total_duration = time.perf_counter() - start_total
                             if total_duration > timeout:
                                 raise TimeoutError(
-                                    f'{func.__name__} exceeded {timeout:.2f}s '
-                                    f'after {i + 1} iterations (took {total_duration:.2f}s)'
+                                    f'{func.__name__} exceeded {timeout:.{self.precision}f}s '
+                                    f'after {i + 1} iterations (took {total_duration:.{self.precision}f}s)'
                                 )
 
                 avg_elapsed_ns = total_elapsed_ns / iterations

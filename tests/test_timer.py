@@ -51,12 +51,24 @@ def test_timeit_no_args_kwargs(mocker):
 def test_multithreaded_timing(mocker):
     """Test timer works correctly across threads"""
     mock_print = mocker.patch('builtins.print')
+
+    # Mock time for 3 threads, each simulating 1 microsecond (1000 ns)
+    mocker.patch(
+        'time.perf_counter_ns',
+        side_effect=[0, 1000, 0, 1000, 0, 1000],
+        autospec=True
+    )
+    mocker.patch(
+        'time.perf_counter',
+        side_effect=[0.0, 1.0e-6, 0.0, 1.0e-6, 0.0, 1.0e-6],
+        autospec=True
+    )
+
     timer = Timer()
     results = []
 
     @timer.timeit()
     def threaded_operation():
-        time.sleep(0.1)
         return threading.get_ident()
 
     def run_in_thread():
@@ -73,6 +85,9 @@ def test_multithreaded_timing(mocker):
     assert mock_print.call_count == 3
     # All thread IDs should be different
     assert len(set(results)) == 3
+
+    for call_args in mock_print.call_args_list:
+        assert 'took 1.0000 [μs]' in call_args[0][0]
 
 
 def test_verbose_mode(mocker):
@@ -195,12 +210,12 @@ def test_timeout_single_iteration(mocker):
     @timer.timeit(timeout=0.1)
     def timed_function():
         nonlocal current_time_s
-        current_time_s += 0.20  # Simulate 0.2 seconds passing
+        current_time_s += 0.2
 
     with pytest.raises(TimeoutError) as exc_info:
         timed_function()
 
-    assert "took 0.20s" in str(exc_info.value)
+    assert "took 0.200000s" in str(exc_info.value)
 
 
 def test_timeout_multiple_iterations():

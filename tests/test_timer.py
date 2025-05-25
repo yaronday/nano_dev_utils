@@ -14,10 +14,6 @@ def test_initialization():
     assert timer_custom.verbose
 
 
-def long_running_function(duration: float) -> None:
-    time.sleep(duration)
-
-
 def test_timeit_simple(mocker):
     mock_print = mocker.patch('builtins.print')
     mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, 9.23467e5])
@@ -51,17 +47,18 @@ def test_timeit_no_args_kwargs(mocker):
 def test_multithreaded_timing(mocker):
     """Test timer works correctly across threads"""
     mock_print = mocker.patch('builtins.print')
-
-    # Mock time for 3 threads, each simulating 1 microsecond (1000 ns)
+    sim_time_us = 1  # μs
+    sim_time_ns = sim_time_us * 1e3
+    num_of_threads = 4
     mocker.patch(
         'time.perf_counter_ns',
-        side_effect=[0, 1000, 0, 1000, 0, 1000],
-        autospec=True
+        side_effect=[0, sim_time_ns] * num_of_threads,
+        autospec=True,
     )
     mocker.patch(
         'time.perf_counter',
-        side_effect=[0.0, 1.0e-6, 0.0, 1.0e-6, 0.0, 1.0e-6],
-        autospec=True
+        side_effect=[0.0, sim_time_us] * num_of_threads,
+        autospec=True,
     )
 
     timer = Timer()
@@ -74,20 +71,18 @@ def test_multithreaded_timing(mocker):
     def run_in_thread():
         results.append(threaded_operation())
 
-    threads = [threading.Thread(target=run_in_thread) for _ in range(3)]
+    threads = [threading.Thread(target=run_in_thread) for _ in range(num_of_threads)]
 
     for t in threads:
         t.start()
     for t in threads:
         t.join()
 
-    # Should have 3 print calls (one per thread)
-    assert mock_print.call_count == 3
-    # All thread IDs should be different
-    assert len(set(results)) == 3
+    assert mock_print.call_count == num_of_threads
+    assert len(set(results)) == num_of_threads
 
     for call_args in mock_print.call_args_list:
-        assert 'took 1.0000 [μs]' in call_args[0][0]
+        assert f'took {sim_time_us:.{timer.precision}f} [μs]' in call_args[0][0]
 
 
 def test_verbose_mode(mocker):
@@ -215,30 +210,84 @@ def test_timeout_single_iteration(mocker):
     with pytest.raises(TimeoutError) as exc_info:
         timed_function()
 
-    assert "took 0.200000s" in str(exc_info.value)
+    assert 'took 0.200000s' in str(exc_info.value)
 
 
-def test_timeout_multiple_iterations():
+def test_timeout_multiple_iterations(mocker):
+    stime_per_iter_ms = 300
+    stime_per_iter_s = stime_per_iter_ms / 1e3
+
+    k = 5
+
+    timeout_threshold = (k - 1) * stime_per_iter_s - 0.05
+
+    mocker.patch(
+        'time.perf_counter',
+        side_effect=[stime_per_iter_s * count for count in range(k + 1)],
+        autospec=True,
+    )
+
     timer = Timer(precision=6, verbose=True)
 
-    # Set a timeout of 0.5s for the total execution of 3 iterations
-    with pytest.raises(TimeoutError):
-        timed_function = timer.timeit(iterations=3, timeout=0.5)(long_running_function)
-        timed_function(0.3)  # Each iteration takes 0.3s, so total should exceed 0.5s
+    @timer.timeit(iterations=k, timeout=timeout_threshold)
+    def func(duration: float) -> str:
+        return f'Function completed in simulated {duration}s'
+
+    with pytest.raises(TimeoutError) as exc_info:
+        func(stime_per_iter_s)
+
+    expected_timeout_val = f'{timeout_threshold:.{timer.precision}f}s'
+    expected_taken_val = f'{(stime_per_iter_s * (k - 1)):.{timer.precision}f}s'
+
+    expected_message_template = (
+        f'func exceeded {expected_timeout_val} after {k - 1} iterations '
+        f'(took {expected_taken_val})'
+    )
+
+    assert str(exc_info.value) == expected_message_template
 
 
-def test_timeout_per_iteration():
+def test_timeout_per_iteration(mocker):
+    sim_time_s = 0.2
+    cfg_timeout = 0.1
+    mocker.patch(
+        'time.perf_counter_ns', side_effect=[0.0, sim_time_s * 1e9], autospec=True
+    )
+    mocker.patch('time.perf_counter', side_effect=[0.0, sim_time_s], autospec=True)
+
     timer = Timer(precision=6, verbose=True)
 
-    # Set a timeout of 0.1s per iteration
-    with pytest.raises(TimeoutError):
-        timed_function = timer.timeit(iterations=5, timeout=0.1, per_iteration=True)(long_running_function)
-        timed_function(0.2)  # Each iteration will exceed the 0.1s timeout
+    @timer.timeit(iterations=5, timeout=cfg_timeout, per_iteration=True)
+    def func(duration: float) -> str:
+        return f'Function completed in simulated {duration}s'
+
+    with pytest.raises(TimeoutError) as exc_info:
+        func(sim_time_s)
+
+    assert (
+        f'exceeded {cfg_timeout:.{timer.precision}f}s on iteration 1 '
+        f'(took {sim_time_s:.{timer.precision}f}s)'
+    ) in str(exc_info.value)
 
 
-def test_timeout_with_fast_function():
-    timer = Timer(precision=6, verbose=True)
+def test_timeout_with_fast_function(mocker):
+    mock_print = mocker.patch('builtins.print')
+    sim_time_ms = 50.1
+    sim_time_s = sim_time_ms / 1e3
 
-    # Test a fast function (should not raise TimeoutError)
-    timed_function = timer.timeit(timeout=1.0)(long_running_function)
-    timed_function(0.05)
+    mocker.patch(
+        'time.perf_counter_ns', side_effect=[0, sim_time_ms * 1e6], autospec=True
+    )
+
+    timer = Timer(precision=4)
+
+    @timer.timeit(timeout=1.0)
+    def func(duration: float) -> str:
+        return f'Function completed in simulated {duration}s'
+
+    result = func(sim_time_s)
+
+    mock_print.assert_called_once_with(
+        f'func took {sim_time_ms:.{timer.precision}f} [ms]'
+    )
+    assert result == f'Function completed in simulated {sim_time_s}s'

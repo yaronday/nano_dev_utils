@@ -27,7 +27,7 @@ class Timer:
                 start_total = time.perf_counter()
                 result: R | None = None
 
-                for i in range(iterations):
+                for i in range(1, iterations + 1):
                     start_ns = time.perf_counter_ns()
                     result = func(*args, **kwargs)
                     duration_ns = time.perf_counter_ns() - start_ns
@@ -40,7 +40,7 @@ class Timer:
                                 raise TimeoutError(
                                     f'{func.__name__} exceeded '
                                     f'{timeout:.{self.precision}f}s on '
-                                    f'iteration {i + 1} (took '
+                                    f'iteration {i} (took '
                                     f'{duration_s:.{self.precision}f}s)'
                                 )
                         else:
@@ -48,7 +48,7 @@ class Timer:
                             if total_duration > timeout:
                                 raise TimeoutError(
                                     f'{func.__name__} exceeded {timeout:.{self.precision}f}s '
-                                    f'after {i + 1} iterations (took {total_duration:.{self.precision}f}s)'
+                                    f'after {i} iterations (took {total_duration:.{self.precision}f}s)'
                                 )
 
                 avg_elapsed_ns = total_elapsed_ns / iterations

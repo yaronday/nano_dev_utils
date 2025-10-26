@@ -1,6 +1,6 @@
 import threading
 import pytest
-from src.nano_dev_utils.timers import Timer
+from nano_dev_utils.timers import Timer
 
 
 def test_initialization():

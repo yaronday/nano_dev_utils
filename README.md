@@ -144,6 +144,95 @@ custom_ports_releaser.release_all(ports=[8080, 9000])
 port_releaser.release_all()
 ```
 
+### `file_tree_display.py`
+
+This module provides a class-based utility for generating a visually structured directory tree.  
+It supports recursive traversal, customizable hierarchy styles, and exclusion patterns for directories and files.  
+Output can be displayed in the console or saved to a file.
+
+
+#### Key Features
+
+- Recursively displays and logs directory trees
+- Efficient directory traversal
+- Blazing fast (see Benchmarks below)
+- Generates human-readable file tree structure
+- Customizable tree display output
+- Optionally saves the resulting tree to a text file
+- Supports ignoring specific directories or files via pattern matching
+- Handles permission and read/write errors gracefully
+
+## Benchmarks
+
+As measured on a dataset of 10553 files, 1235 folders (ca. 16 GB) using Python 3.10 on SSD,   
+FileTreeDisplay completed directory scans up to ~12× faster than Seedir.
+
+| Tool            | Time (s) |
+|-----------------|----------|
+| FileTreeDisplay | 0.230    |
+| Seedir          | 2.816    |
+| treelib         |          |
+
+
+#### Class Overview
+
+**`FileTreeDisplay`**
+Constructs and manages the visual representation of a directory structure.
+
+**Initialization Parameters**
+
+| Parameter        | Type                            | Description                                                 |
+|:-----------------|:--------------------------------|:------------------------------------------------------------|
+| `root_dir`       | `str`                           | Path to the directory to scan.                              |
+| `filepath`       | `str / None`                    | Optional output destination for the saved file tree.        |                                               
+| `ignore_dirs`    | `list[str] or set[str] or None` | Directory names or patterns to skip.                        |                                                   | Directory names or patterns to skip. |
+| `ignore_files`   | `list[str] or set[str] or None` | File names or patterns to skip.                             |
+| `style`          | `str`                           | Character(s) used to mark hierarchy levels (default `'-'`). |
+| `indent`         | `int`                           | Number of style characters per level (default `1`).         |
+| `title`          | `str`                           | Custom title shown in the output.                           |
+| `default_suffix` | `str`                           | Default suffix for saved tree files.                        |
+
+#### Core Methods
+
+- `file_tree_display(save2file: bool = True) -> str | None`
+Generates the directory tree. If `save2file=True`, saves the output; otherwise prints it directly.
+- `build_tree(dir_path: str, prefix: str = '') -> Generator[str, None, None]`
+Recursively yields formatted lines representing directories and files.
+- `should_ignore(name: str, is_dir: bool) -> bool`
+Returns whether a given file or directory should be ignored based on exclusion patterns.
+- `save2file(header: list[str], iterator: Generator[str, None, None], filepath: str | None = None) -> str`
+Saves the constructed file tree to disk and returns the absolute path.
+
+#### Example Usage
+
+```python
+from pathlib import Path
+from nano_dev_utils.file_tree_display import FileTreeDisplay
+
+root = r'c:/your_root_dir'
+target_path = r'c:/your_target_path'
+filename = 'filetree.md'
+filepath = Path(target_path, filename)
+
+ftd = FileTreeDisplay(root_dir=root,
+                      ignore_dirs={'.git', 'node_modules', '.idea'},
+                      ignore_files={'.gitignore'}, indent=2, style=' ',
+                      filepath=str(filepath))
+ftd.file_tree_display()
+
+```
+
+
+#### Error Handling
+
+The module raises well-defined exceptions for common issues:
+
+- `NotADirectoryError` when the path is not a directory
+- `PermissionError` for unreadable directories or write-protected files
+- `OSError` for general I/O or write failures
+
+***
+
 ## License
 This project is licensed under the MIT License. 
 See [LICENSE](LICENSE) for details.

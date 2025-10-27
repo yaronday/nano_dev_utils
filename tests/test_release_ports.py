@@ -298,7 +298,9 @@ def test_release_all_invalid_port(ports_release, mock_logger, mocker):
 def test_release_all_unexpected_exception(ports_release, mock_logger, mocker):
     err = Exception('Release all error')
     port = 9010
-    mock_get_pid = mocker.patch.object(ports_release, 'get_pid_by_port', side_effect=err)
+    mock_get_pid = mocker.patch.object(
+        ports_release, 'get_pid_by_port', side_effect=err
+    )
     ports_release.release_all(ports=[port])
     mock_logger.error.assert_called_once_with(ports_release._log_unexpected_error(err))
     mock_get_pid.assert_called_once_with(port)

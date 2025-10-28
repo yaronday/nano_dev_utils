@@ -318,8 +318,7 @@ def test_timeout_with_fast_function(mock_logger: Mock, mocker: MockerFixture) ->
     assert result == f'{SIM_COMPLETE_TIME} {sim_time_s}s'
 
 
-# todo add async handler for timeit
-# @pytest.mark.skip(reason="Unstable logging result + pyright error")
+# @pytest.mark.skip(reason='Pyright errors')  # test passes, pyright fails
 @pytest.mark.asyncio
 async def test_timer_async_function(mock_logger, mocker):
     mocker.patch('asyncio.sleep', side_effect=lambda t: asyncio.sleep(0))
@@ -335,4 +334,4 @@ async def test_timer_async_function(mock_logger, mocker):
     assert mock_logger.info.called
     log_args = mock_logger.info.call_args[0][0]
     assert 'fast_async' in log_args
-    assert re.search(r'fast_async took\s+([0-9]*\.[0-9]+)\s*\[(ns|μs|ms|s)]', log_args)
+    assert re.search(r'fast_async took\s+([0-9]*\.[0-9]+)\s*\[(ns|μs)]', log_args)

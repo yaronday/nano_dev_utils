@@ -3,7 +3,7 @@ import time
 import logging
 import inspect
 
-from typing import Callable, ParamSpec, TypeVar, Coroutine, Any
+from typing import Callable, ParamSpec, TypeVar, Awaitable
 
 from nano_dev_utils.common import update
 
@@ -31,16 +31,21 @@ class Timer:
         iterations: int = 1,
         timeout: float | None = None,
         per_iteration: bool = False,
-    ) -> Callable[[Callable[P, R]], Callable[P, R | None]]:
-        """Decorator that times function execution with optional timeout support."""
+    ) -> Callable[
+        [Callable[P, R] | Callable[P, Awaitable[R]]],
+        Callable[P, R] | Callable[P, Awaitable[R]],
+    ]:
+        """Decorator that times sync or async function execution with optional timeout."""
 
-        def decorator(func: Callable[P, R]) -> Callable[P, R | None]:
+        def decorator(
+            func: Callable[P, R] | Callable[P, Awaitable[R]],
+        ) -> Callable[P, R] | Callable[P, Awaitable[R]]:
             if inspect.iscoroutinefunction(func):
 
                 @wraps(func)
-                async def async_wrapper(*args, **kwargs) -> Coroutine[Any, Any, R]:
+                async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                     total_elapsed_ns = 0
-                    result = None
+                    result: R | None = None
                     for i in range(1, iterations + 1):
                         start_ns = time.perf_counter_ns()
                         result = await func(*args, **kwargs)  # await async function!
@@ -66,9 +71,9 @@ class Timer:
             else:
 
                 @wraps(func)
-                def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
+                def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                     total_elapsed_ns = 0
-                    result: R | None = None
+                    result: R = None
 
                     for i in range(1, iterations + 1):
                         start_ns = time.perf_counter_ns()

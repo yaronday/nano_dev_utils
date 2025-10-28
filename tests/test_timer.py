@@ -2,6 +2,7 @@ import threading
 import asyncio
 import pytest
 import logging
+import re
 
 from pytest_mock import MockerFixture
 from unittest.mock import Mock
@@ -50,7 +51,9 @@ def test_timeit_no_args_kwargs(mock_logger: Mock, mocker: MockerFixture) -> None
     result = yet_another_function()
     assert result == 'yet another result'
     mock_time.assert_any_call()
-    mock_logger.info.assert_called_once_with('yet_another_function () {} took 0.50 [ns]')
+    mock_logger.info.assert_called_once_with(
+        'yet_another_function () {} took 0.50 [ns]'
+    )
 
 
 def test_multithreaded_timing(mock_logger: Mock, mocker: MockerFixture) -> None:
@@ -314,12 +317,11 @@ def test_timeout_with_fast_function(mock_logger: Mock, mocker: MockerFixture) ->
 
 
 # todo add async handler for timeit
-#  Fix the unstable logging issue below (maybe with regex)
-@pytest.mark.skip(reason="Unstable logging result + pyright error")
+# @pytest.mark.skip(reason="Unstable logging result + pyright error")
 @pytest.mark.asyncio
 async def test_timer_async_function(mock_logger, mocker):
     mocker.patch('asyncio.sleep', side_effect=lambda t: asyncio.sleep(0))
-    timer.init(precision=6, verbose=True)
+    timer.init(precision=6)
 
     @timer.timeit()
     async def fast_async(x):
@@ -331,4 +333,4 @@ async def test_timer_async_function(mock_logger, mocker):
     assert mock_logger.info.called
     log_args = mock_logger.info.call_args[0][0]
     assert 'fast_async' in log_args
-    assert '0.0' in log_args
+    assert re.search(r'fast_async took\s+([0-9]*\.[0-9]+)\s*\[(ns|μs|ms|s)]', log_args)

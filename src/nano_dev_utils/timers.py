@@ -1,7 +1,9 @@
 from functools import wraps
 import time
 import logging
-from typing import Callable, ParamSpec, TypeVar
+import inspect
+
+from typing import Callable, ParamSpec, TypeVar, Coroutine, Any
 
 from nano_dev_utils.common import update
 
@@ -33,38 +35,65 @@ class Timer:
         """Decorator that times function execution with optional timeout support."""
 
         def decorator(func: Callable[P, R]) -> Callable[P, R | None]:
-            @wraps(func)
-            def wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
-                total_elapsed_ns = 0
-                result: R | None = None
+            if inspect.iscoroutinefunction(func):
 
-                for i in range(1, iterations + 1):
-                    start_ns = time.perf_counter_ns()
-                    result = func(*args, **kwargs)
-                    duration_ns = time.perf_counter_ns() - start_ns
-                    total_elapsed_ns += duration_ns
-
-                    self._check_timeout(
-                        func.__name__,
-                        i,
-                        duration_ns,
-                        total_elapsed_ns,
-                        timeout,
-                        per_iteration,
+                @wraps(func)
+                async def async_wrapper(*args, **kwargs) -> Coroutine[Any, Any, R]:
+                    total_elapsed_ns = 0
+                    result = None
+                    for i in range(1, iterations + 1):
+                        start_ns = time.perf_counter_ns()
+                        result = await func(*args, **kwargs)  # await async function!
+                        duration_ns = time.perf_counter_ns() - start_ns
+                        total_elapsed_ns += duration_ns
+                        self._check_timeout(
+                            func.__name__,
+                            i,
+                            duration_ns,
+                            total_elapsed_ns,
+                            timeout,
+                            per_iteration,
+                        )
+                    avg_elapsed_ns = total_elapsed_ns / iterations
+                    value, unit = self._to_units(avg_elapsed_ns)
+                    msg = self._formatted_msg(
+                        func.__name__, args, kwargs, value, unit, iterations
                     )
+                    lgr.info(msg)
+                    return result
 
-                avg_elapsed_ns = total_elapsed_ns / iterations
+                return async_wrapper
+            else:
 
-                value, unit = self._to_units(avg_elapsed_ns)
+                @wraps(func)
+                def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
+                    total_elapsed_ns = 0
+                    result: R | None = None
 
-                extra_info = f'{args} {kwargs} ' if self.verbose else ''
-                iter_info = f' (avg. over {iterations} runs)' if iterations > 1 else ''
-                lgr.info(
-                    f'{func.__name__} {extra_info}took {value:.{self.precision}f} [{unit}]{iter_info}'
-                )
-                return result
+                    for i in range(1, iterations + 1):
+                        start_ns = time.perf_counter_ns()
+                        result = func(*args, **kwargs)
+                        duration_ns = time.perf_counter_ns() - start_ns
+                        total_elapsed_ns += duration_ns
 
-            return wrapper
+                        self._check_timeout(
+                            func.__name__,
+                            i,
+                            duration_ns,
+                            total_elapsed_ns,
+                            timeout,
+                            per_iteration,
+                        )
+
+                    avg_elapsed_ns = total_elapsed_ns / iterations
+                    value, unit = self._to_units(avg_elapsed_ns)
+                    msg = self._formatted_msg(
+                        func.__name__, args, kwargs, value, unit, iterations
+                    )
+                    lgr.info(msg)
+                    return result
+
+                return sync_wrapper
 
         return decorator
 
@@ -102,3 +131,16 @@ class Timer:
             for div, u in self.units
             if avg_elapsed_ns >= div or u == 'ns'
         )
+
+    def _formatted_msg(
+        self,
+        func_name: str,
+        args: tuple,
+        kwargs: dict,
+        value: float,
+        unit: str,
+        iterations: int,
+    ) -> str:
+        extra_info = f'{args} {kwargs} ' if self.verbose else ''
+        iter_info = f' (avg. over {iterations} runs)' if iterations > 1 else ''
+        return f'{func_name} {extra_info}took {value:.{self.precision}f} [{unit}]{iter_info}'

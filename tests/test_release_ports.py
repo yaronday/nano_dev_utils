@@ -1,5 +1,7 @@
-import logging
 import pytest
+from pytest_mock import MockerFixture
+from typing import Any
+import logging
 from nano_dev_utils import release_ports, PortsRelease, PROXY_SERVER, INSPECTOR_CLIENT
 
 
@@ -38,7 +40,9 @@ def cleanup():
     yield
 
 
-def mock_pid_retrieval(pr, mocker, entry, port):
+def mock_pid_retrieval(
+    pr: PortsRelease, mocker: MockerFixture, entry: dict[str, Any], port: int
+) -> tuple[int | None, bytes]:
     mock_process = mocker.MagicMock()
     encoded_entry = encode_dict(entry)
     mock_process.communicate.return_value = (encoded_entry, '')
@@ -47,7 +51,9 @@ def mock_pid_retrieval(pr, mocker, entry, port):
     return pid, encoded_entry
 
 
-def test_get_pid_by_port_linux_success(pr, mock_logger, mocker):
+def test_get_pid_by_port_linux_success(
+    pr: PortsRelease, mock_logger: logging.Logger, mocker: MockerFixture
+) -> None:
     mock_popen = mocker.patch('subprocess.Popen')
     mocker.patch('platform.system', return_value='Linux')
     # ss - lntp command response structure
@@ -298,9 +304,7 @@ def test_release_all_invalid_port(pr, mock_logger, mocker):
 def test_release_all_unexpected_exception(pr, mock_logger, mocker):
     err = Exception('Release all error')
     port = 9010
-    mock_get_pid = mocker.patch.object(
-        pr, 'get_pid_by_port', side_effect=err
-    )
+    mock_get_pid = mocker.patch.object(pr, 'get_pid_by_port', side_effect=err)
     pr.release_all(ports=[port])
     mock_logger.error.assert_called_once_with(pr._log_unexpected_error(err))
     mock_get_pid.assert_called_once_with(port)

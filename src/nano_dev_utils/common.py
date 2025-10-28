@@ -17,4 +17,6 @@ def update(obj: object, attrs: dict) -> None:
             try:
                 setattr(obj, key, value)
             except AttributeError as e:
-                raise AttributeError(f"Cannot set attribute '{key}' on object '{obj}': {e}")
+                raise AttributeError(
+                    f"Cannot set attribute '{key}' on object '{obj}': {e}"
+                )

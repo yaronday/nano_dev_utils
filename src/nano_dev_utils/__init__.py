@@ -17,5 +17,5 @@ __all__ = [
     'PortsRelease',
     'PROXY_SERVER',
     'INSPECTOR_CLIENT',
-    'update'
+    'update',
 ]

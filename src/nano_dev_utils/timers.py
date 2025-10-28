@@ -44,30 +44,19 @@ class Timer:
                     duration_ns = time.perf_counter_ns() - start_ns
                     total_elapsed_ns += duration_ns
 
-                    if timeout is not None:
-                        if per_iteration:
-                            duration_s = duration_ns / 1e9
-                            if duration_s > timeout:
-                                raise TimeoutError(
-                                    f'{func.__name__} exceeded '
-                                    f'{timeout:.{self.precision}f}s on '
-                                    f'iteration {i} (took '
-                                    f'{duration_s:.{self.precision}f}s)'
-                                )
-                        else:
-                            total_duration_s = total_elapsed_ns / 1e9
-                            if total_duration_s > timeout:
-                                raise TimeoutError(
-                                    f'{func.__name__} exceeded {timeout:.{self.precision}f}s '
-                                    f'after {i} iterations (took {total_duration_s:.{self.precision}f}s)'
-                                )
+                    self._check_timeout(
+                        func.__name__,
+                        i,
+                        duration_ns,
+                        total_elapsed_ns,
+                        timeout,
+                        per_iteration,
+                    )
 
                 avg_elapsed_ns = total_elapsed_ns / iterations
-                value, unit = next(
-                    (avg_elapsed_ns / div, u)
-                    for div, u in self.units
-                    if avg_elapsed_ns >= div or u == 'ns'
-                )
+
+                value, unit = self._to_units(avg_elapsed_ns)
+
                 extra_info = f'{args} {kwargs} ' if self.verbose else ''
                 iter_info = f' (avg. over {iterations} runs)' if iterations > 1 else ''
                 lgr.info(
@@ -78,3 +67,38 @@ class Timer:
             return wrapper
 
         return decorator
+
+    def _check_timeout(
+        self,
+        func_name: str,
+        i: int,
+        duration_ns: float,
+        total_elapsed_ns: float,
+        timeout: float | None,
+        per_iteration: bool,
+    ) -> None:
+        """Raise TimeoutError if timeout is exceeded."""
+        if timeout is None:
+            return
+        if per_iteration:
+            duration_s = duration_ns / 1e9
+            if duration_s > timeout:
+                raise TimeoutError(
+                    f'{func_name} exceeded {timeout:.{self.precision}f}s on '
+                    f'iteration {i} (took {duration_s:.{self.precision}f}s)'
+                )
+        else:
+            total_duration_s = total_elapsed_ns / 1e9
+            if total_duration_s > timeout:
+                raise TimeoutError(
+                    f'{func_name} exceeded {timeout:.{self.precision}f}s '
+                    f'after {i} iterations (took {total_duration_s:.{self.precision}f}s)'
+                )
+
+    def _to_units(self, avg_elapsed_ns: float) -> tuple[float, str]:
+        """Convert nanoseconds to the appropriate time unit."""
+        return next(
+            (avg_elapsed_ns / div, u)
+            for div, u in self.units
+            if avg_elapsed_ns >= div or u == 'ns'
+        )

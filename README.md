@@ -38,9 +38,7 @@ This module provides a `Timer` class for measuring the execution time of code bl
 
 ```python
 import time
-from nano_dev_utils.timers import Timer
-
-timer = Timer(precision=6, verbose=True)
+from nano_dev_utils import timer
 
 # Basic timing
 @timer.timeit()
@@ -48,6 +46,18 @@ def my_function(a, b=10):
     """A sample function."""
     time.sleep(0.1)
     return a + b
+
+timer.init(precision=6, verbose=True)
+'''
+Alternatively we could have used the `update` method as well: 
+
+timer.update({'precision': 6, 'verbose': True})  
+
+The above config could be also achieved via explicit instantiation:
+
+from nano_dev_utils.timers import Timer
+timer = Timer(precision=6, verbose=True)
+'''
 
 # Advanced usage with timeout and iterations
 @timer.timeit(iterations=5, timeout=0.5, per_iteration=True)

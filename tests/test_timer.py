@@ -1,8 +1,17 @@
 import threading
-
+import asyncio
 import pytest
+import logging
+
 from pytest_mock import MockerFixture
-from nano_dev_utils import timer
+from nano_dev_utils import timers, timer
+
+
+@pytest.fixture
+def mock_logger(mocker):
+    mock_logger = mocker.MagicMock(spec=logging.Logger)
+    timers.lgr = mock_logger  # patch module level logger!
+    return mock_logger
 
 
 def test_initialization() -> None:
@@ -14,9 +23,9 @@ def test_initialization() -> None:
     assert timer.verbose
 
 
-def test_timeit_simple(mocker: MockerFixture) -> None:
-    mock_print = mocker.patch('builtins.print')
-    mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, 9.23467e5])
+def test_timeit_simple(mock_logger, mocker) -> None:
+    mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, int(923_470)])
+
     timer.init(precision=2)
 
     @timer.timeit()
@@ -26,7 +35,7 @@ def test_timeit_simple(mocker: MockerFixture) -> None:
     result = sample_function()
     assert result == 'result'
     mock_time.assert_any_call()
-    mock_print.assert_called_once_with('sample_function took 923.47 [μs]')
+    mock_logger.info.assert_called_once_with('sample_function took 923.47 [μs]')
 
 
 def test_timeit_no_args_kwargs(mocker: MockerFixture) -> None:
@@ -311,3 +320,22 @@ def test_timeout_with_fast_function(mocker: MockerFixture) -> None:
         f'func took {sim_time_ms:.{timer.precision}f} [ms]'
     )
     assert result == f'Function completed in simulated {sim_time_s}s'
+
+
+@pytest.mark.asyncio
+async def test_timer_async_function(mock_logger, mocker):
+    mocker.patch("asyncio.sleep", side_effect=lambda t: asyncio.sleep(0))
+    timer.init(precision=6, verbose=True)
+
+    @timer.timeit()
+    async def fast_async(x):
+        await asyncio.sleep(0.05)
+        return x * 2
+
+    result = await fast_async(10)
+    assert result == 20
+    assert mock_logger.info.called
+    log_args = mock_logger.info.call_args[0][0]
+    assert "fast_async" in log_args
+    assert "0.0" in log_args
+

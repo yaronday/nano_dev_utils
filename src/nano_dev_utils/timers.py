@@ -1,8 +1,12 @@
 from functools import wraps
 import time
+import logging
 from typing import Callable, ParamSpec, TypeVar
 
 from nano_dev_utils.common import update
+
+lgr = logging.getLogger(__name__)
+"""Module-level logger. Configure using logging.basicConfig() in your application."""
 
 P = ParamSpec('P')
 R = TypeVar('R')
@@ -66,7 +70,7 @@ class Timer:
                 )
                 extra_info = f'{args} {kwargs} ' if self.verbose else ''
                 iter_info = f' (avg. over {iterations} runs)' if iterations > 1 else ''
-                print(
+                lgr.info(
                     f'{func.__name__} {extra_info}took {value:.{self.precision}f} [{unit}]{iter_info}'
                 )
                 return result

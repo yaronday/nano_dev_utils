@@ -3,6 +3,7 @@ from pytest_mock import MockerFixture
 from typing import Any
 import logging
 from nano_dev_utils import release_ports, PortsRelease, PROXY_SERVER, INSPECTOR_CLIENT
+from nano_dev_utils.common import encode_dict
 
 
 @pytest.fixture
@@ -15,10 +16,6 @@ def mock_logger(mocker) -> logging.Logger:
     logger = mocker.MagicMock(spec=logging.Logger)
     mocker.patch.object(release_ports, 'lgr', logger)
     return logger
-
-
-def encode_dict(input_dict: dict) -> bytes:
-    return b' '.join(str(v).encode() for v in input_dict.values())
 
 
 def remove_file_handlers() -> None:

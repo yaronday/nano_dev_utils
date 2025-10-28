@@ -43,5 +43,5 @@ def encode_dict(input_dict: dict) -> bytes:
         TypeError: If input_dict is not a dictionary.
     """
     if not isinstance(input_dict, dict):
-        raise TypeError("input_dict must be a dictionary.")
+        raise TypeError('input_dict must be a dictionary.')
     return b' '.join(str(v).encode() for v in input_dict.values())

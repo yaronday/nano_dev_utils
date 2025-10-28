@@ -8,6 +8,8 @@ from pytest_mock import MockerFixture
 from unittest.mock import Mock
 from nano_dev_utils import timers, timer
 
+SIM_COMPLETE_TIME = 'Function completed in simulated'
+
 
 @pytest.fixture
 def mock_logger(mocker):
@@ -256,7 +258,7 @@ def test_timeout_multiple_iterations(mocker: MockerFixture) -> None:
 
     @timer.timeit(iterations=k, timeout=timeout_threshold)
     def func(duration: float) -> str:
-        return f'Function completed in simulated {duration}s'
+        return f'{SIM_COMPLETE_TIME} {duration}s'
 
     with pytest.raises(TimeoutError) as exc_info:
         func(sim_time_per_iter_s)
@@ -283,7 +285,7 @@ def test_timeout_per_iteration(mocker: MockerFixture) -> None:
 
     @timer.timeit(iterations=5, timeout=cfg_timeout, per_iteration=True)
     def func(duration: float) -> str:
-        return f'Function completed in simulated {duration}s'
+        return f'{SIM_COMPLETE_TIME} {duration}s'
 
     with pytest.raises(TimeoutError) as exc_info:
         func(sim_time_s)
@@ -306,14 +308,14 @@ def test_timeout_with_fast_function(mock_logger: Mock, mocker: MockerFixture) ->
 
     @timer.timeit(timeout=1.0)
     def func(duration: float) -> str:
-        return f'Function completed in simulated {duration}s'
+        return f'{SIM_COMPLETE_TIME} {duration}s'
 
     result = func(sim_time_s)
 
     mock_logger.info.assert_called_once_with(
         f'func took {sim_time_ms:.{timer.precision}f} [ms]'
     )
-    assert result == f'Function completed in simulated {sim_time_s}s'
+    assert result == f'{SIM_COMPLETE_TIME} {sim_time_s}s'
 
 
 # todo add async handler for timeit

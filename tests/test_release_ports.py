@@ -1,9 +1,6 @@
 import logging
 import pytest
-from src.nano_dev_utils import release_ports as rp
-
-PROXY_SERVER = rp.PROXY_SERVER
-CLIENT_PORT = rp.INSPECTOR_CLIENT
+from nano_dev_utils import release_ports as rp, PROXY_SERVER, INSPECTOR_CLIENT
 
 
 @pytest.fixture
@@ -273,15 +270,15 @@ def test_release_all_default_ports_success(ports_release, mock_logger, mocker):
 
     assert mock_get_pid.call_args_list == [
         mocker.call(PROXY_SERVER),
-        mocker.call(CLIENT_PORT),
+        mocker.call(INSPECTOR_CLIENT),
     ]
     assert mock_kill.call_args_list == [mocker.call(pid1), mocker.call(pid2)]
     mock_logger.info.assert_has_calls(
         [
             mocker.call(ports_release._log_process_found(PROXY_SERVER, pid1)),
             mocker.call(ports_release._log_process_terminated(pid1, PROXY_SERVER)),
-            mocker.call(ports_release._log_process_found(CLIENT_PORT, pid2)),
-            mocker.call(ports_release._log_process_terminated(pid2, CLIENT_PORT)),
+            mocker.call(ports_release._log_process_found(INSPECTOR_CLIENT, pid2)),
+            mocker.call(ports_release._log_process_terminated(pid2, INSPECTOR_CLIENT)),
         ]
     )
 
@@ -300,8 +297,11 @@ def test_release_all_invalid_port(ports_release, mock_logger, mocker):
 
 def test_release_all_unexpected_exception(ports_release, mock_logger, mocker):
     err = Exception('Release all error')
-    mocker.patch.object(ports_release, 'get_pid_by_port', side_effect=err)
     port = 9010
+    mock_get_pid = mocker.patch.object(
+        ports_release, 'get_pid_by_port', side_effect=err
+    )
     ports_release.release_all(ports=[port])
     mock_logger.error.assert_called_once_with(ports_release._log_unexpected_error(err))
-    ports_release.get_pid_by_port.assert_called_once_with(port)
+    mock_get_pid.assert_called_once_with(port)
+    assert mock_get_pid.call_args_list == [mocker.call(port)]

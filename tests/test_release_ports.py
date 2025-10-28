@@ -1,8 +1,9 @@
 import pytest
+import logging
+
 from pytest_mock import MockerFixture
 from unittest.mock import Mock
 from typing import Any
-import logging
 from nano_dev_utils import release_ports, PortsRelease, PROXY_SERVER, INSPECTOR_CLIENT
 from nano_dev_utils.common import encode_dict
 

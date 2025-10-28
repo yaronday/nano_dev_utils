@@ -1,8 +1,7 @@
 import threading
+
 import pytest
 from pytest_mock import MockerFixture
-
-from nano_dev_utils.timers import Timer
 from nano_dev_utils import timer
 
 
@@ -10,15 +9,15 @@ def test_initialization() -> None:
     assert timer.precision == 4
     assert not timer.verbose
 
-    timer_custom = Timer(precision=6, verbose=True)
-    assert timer_custom.precision == 6
-    assert timer_custom.verbose
+    timer.init(6, True)
+    assert timer.precision == 6
+    assert timer.verbose
 
 
 def test_timeit_simple(mocker: MockerFixture) -> None:
     mock_print = mocker.patch('builtins.print')
     mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, 9.23467e5])
-    timer.update({'precision': 2})
+    timer.init(precision=2)
 
     @timer.timeit()
     def sample_function():
@@ -33,7 +32,7 @@ def test_timeit_simple(mocker: MockerFixture) -> None:
 def test_timeit_no_args_kwargs(mocker: MockerFixture) -> None:
     mock_print = mocker.patch('builtins.print')
     mock_time = mocker.patch('time.perf_counter_ns', side_effect=[1.0, 1.5])
-    timer.update({'precision': 2, 'verbose': True})
+    timer.init(precision=2, verbose=True)
 
     @timer.timeit()
     def yet_another_function():
@@ -85,9 +84,9 @@ def test_verbose_mode(mocker: MockerFixture) -> None:
     keyword arguments in output and preserves the wrapped func result"""
     mock_print = mocker.patch('builtins.print')
     mocker.patch('time.perf_counter_ns', side_effect=[1e4, 5.23456e4])
-    verbose_timer = Timer(verbose=True)
+    timer.init(verbose=True)
 
-    @verbose_timer.timeit()
+    @timer.timeit()
     def func_with_args(a, b, c=3):
         return a + b + c
 
@@ -195,7 +194,7 @@ def test_timeit_with_iterations(mocker: MockerFixture) -> None:
         autospec=True,
     )
 
-    timer.update({'precision': 2, 'verbose': False})
+    timer.init(precision=2)
 
     @timer.timeit(iterations=k)
     def sample_function():
@@ -222,7 +221,8 @@ def test_timeout_single_iteration(mocker: MockerFixture) -> None:
         side_effect=[0.0, duration_ns],
         autospec=True,
     )
-    timer.update({'precision': 6, 'verbose': True})
+
+    timer.init(6, True)
 
     @timer.timeit(timeout=cfg_timeout_s)
     def timed_function():
@@ -248,7 +248,7 @@ def test_timeout_multiple_iterations(mocker: MockerFixture) -> None:
         autospec=True,
     )
 
-    timer.update({'precision': 6, 'verbose': True})
+    timer.init(6, True)
 
     @timer.timeit(iterations=k, timeout=timeout_threshold)
     def func(duration: float) -> str:
@@ -275,7 +275,7 @@ def test_timeout_per_iteration(mocker: MockerFixture) -> None:
         'time.perf_counter_ns', side_effect=[0.0, sim_time_s * 1e9], autospec=True
     )
 
-    timer.update({'precision': 6, 'verbose': True})
+    timer.init(6, True)
 
     @timer.timeit(iterations=5, timeout=cfg_timeout, per_iteration=True)
     def func(duration: float) -> str:

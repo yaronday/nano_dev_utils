@@ -2,6 +2,8 @@ from functools import wraps
 import time
 from typing import Callable, ParamSpec, TypeVar
 
+from nano_dev_utils.common import update
+
 P = ParamSpec('P')
 R = TypeVar('R')
 
@@ -11,6 +13,12 @@ class Timer:
         self.precision = precision
         self.verbose = verbose
         self.units = [(1e9, 's'), (1e6, 'ms'), (1e3, 'μs'), (1.0, 'ns')]
+
+    def init(self, *args, **kwargs) -> None:
+        self.__init__(*args, **kwargs)
+
+    def update(self, attrs: dict) -> None:
+        update(self, attrs)
 
     def timeit(
         self,

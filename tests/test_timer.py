@@ -1,10 +1,10 @@
 import threading
 import pytest
 from nano_dev_utils.timers import Timer
+from nano_dev_utils import timer
 
 
 def test_initialization():
-    timer = Timer()
     assert timer.precision == 4
     assert not timer.verbose
 
@@ -55,7 +55,6 @@ def test_multithreaded_timing(mocker):
         autospec=True,
     )
 
-    timer = Timer()
     results = []
 
     @timer.timeit()
@@ -117,7 +116,6 @@ def test_nested_timers(mocker):
     )
 
     mock_print = mocker.patch('builtins.print')
-    timer = Timer()
 
     @timer.timeit()
     def outer():

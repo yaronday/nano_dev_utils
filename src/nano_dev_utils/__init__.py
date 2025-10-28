@@ -19,5 +19,5 @@ __all__ = [
     'PROXY_SERVER',
     'INSPECTOR_CLIENT',
     'update',
-    'timer'
+    'timer',
 ]

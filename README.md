@@ -165,13 +165,13 @@ Output can be displayed in the console or saved to a file.
 ## Benchmarks
 
 As measured on a dataset of 10553 files, 1235 folders (ca. 16 GB) using Python 3.10 on SSD,   
-FileTreeDisplay completed directory scans up to ~12× faster than Seedir.
+FileTreeDisplay completed directory scans up to ~18× faster than Seedir.
 
 | Tool            | Time (s) |
-|-----------------|----------|
-| FileTreeDisplay | 0.230    |
-| Seedir          | 2.816    |
-| treelib         |          |
+|-----------------|-----------| 
+| FileTreeDisplay |   0.183   |
+| Seedir          |   3.267   |
+| treelib         |           |
 
 
 #### Class Overview
@@ -185,7 +185,7 @@ Constructs and manages the visual representation of a directory structure.
 |:-----------------|:--------------------------------|:------------------------------------------------------------|
 | `root_dir`       | `str`                           | Path to the directory to scan.                              |
 | `filepath`       | `str / None`                    | Optional output destination for the saved file tree.        |                                               
-| `ignore_dirs`    | `list[str] or set[str] or None` | Directory names or patterns to skip.                        |                                                   | Directory names or patterns to skip. |
+| `ignore_dirs`    | `list[str] or set[str] or None` | Directory names or patterns to skip.                        |                                                
 | `ignore_files`   | `list[str] or set[str] or None` | File names or patterns to skip.                             |
 | `style`          | `str`                           | Character(s) used to mark hierarchy levels (default `'-'`). |
 | `indent`         | `int`                           | Number of style characters per level (default `1`).         |

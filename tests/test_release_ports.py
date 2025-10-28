@@ -1,5 +1,6 @@
 import pytest
 from pytest_mock import MockerFixture
+from unittest.mock import Mock
 from typing import Any
 import logging
 from nano_dev_utils import release_ports, PortsRelease, PROXY_SERVER, INSPECTOR_CLIENT
@@ -12,10 +13,10 @@ def pr() -> PortsRelease:
 
 
 @pytest.fixture
-def mock_logger(mocker) -> logging.Logger:
-    logger = mocker.MagicMock(spec=logging.Logger)
-    mocker.patch.object(release_ports, 'lgr', logger)
-    return logger
+def mock_logger(mocker: MockerFixture) -> Mock:
+    mock_logger = mocker.MagicMock(spec=logging.Logger)
+    mocker.patch.object(release_ports, 'lgr', mock_logger)
+    return mock_logger
 
 
 def remove_file_handlers() -> None:
@@ -85,7 +86,9 @@ def test_get_pid_by_port_linux_success(
     )
 
 
-def test_get_pid_by_port_windows_success(pr, mock_logger, mocker):
+def test_get_pid_by_port_windows_success(
+    pr: PortsRelease, mock_logger: logging.Logger, mocker: MockerFixture
+) -> None:
     mock_popen = mocker.patch('subprocess.Popen')
     mocker.patch('platform.system', return_value='Windows')
 
@@ -113,7 +116,9 @@ def test_get_pid_by_port_windows_success(pr, mock_logger, mocker):
     )
 
 
-def test_get_pid_by_port_darwin_success(pr, mock_logger, mocker):
+def test_get_pid_by_port_darwin_success(
+    pr: PortsRelease, mock_logger: logging.Logger, mocker: MockerFixture
+) -> None:
     mock_popen = mocker.patch('subprocess.Popen')
     mocker.patch('platform.system', return_value='Darwin')
     # lsof -i command response structure (MacOS)
@@ -145,14 +150,18 @@ def test_get_pid_by_port_darwin_success(pr, mock_logger, mocker):
     )
 
 
-def test_get_pid_by_port_unsupported_os(pr, mock_logger, mocker):
+def test_get_pid_by_port_unsupported_os(
+    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     mocker.patch('platform.system', return_value='UnsupportedOS')
     pid = pr.get_pid_by_port(1234)
     assert pid is None
     mock_logger.error.assert_called_once_with(pr._log_unsupported_os())
 
 
-def test_get_pid_by_port_no_process(pr, mock_logger, mocker):
+def test_get_pid_by_port_no_process(
+    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     port = 9999
     mocker.patch('platform.system', return_value='Linux')
     mock_process = mocker.MagicMock()
@@ -164,7 +173,9 @@ def test_get_pid_by_port_no_process(pr, mock_logger, mocker):
     mock_logger.error.assert_not_called()
 
 
-def test_get_pid_by_port_command_error(pr, mock_logger, mocker):
+def test_get_pid_by_port_command_error(
+    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     mock_popen = mocker.patch('subprocess.Popen')
     mocker.patch('platform.system', return_value='Linux')
     port = 80
@@ -177,7 +188,9 @@ def test_get_pid_by_port_command_error(pr, mock_logger, mocker):
     mock_logger.error.assert_called_once_with(f'Error running command: {err}')
 
 
-def test_get_pid_by_port_parse_error(pr, mock_logger, mocker):
+def test_get_pid_by_port_parse_error(
+    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     mocker.patch('platform.system', return_value='Linux')
     port = 8080
     peer_port = '*'
@@ -203,7 +216,9 @@ def test_get_pid_by_port_parse_error(pr, mock_logger, mocker):
     )
 
 
-def test_get_pid_by_port_unexpected_exception(pr, mock_logger, mocker):
+def test_get_pid_by_port_unexpected_exception(
+    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     mocker.patch('platform.system', return_value='Linux')
     err = Exception('Unexpected')
     port = 1234
@@ -213,7 +228,9 @@ def test_get_pid_by_port_unexpected_exception(pr, mock_logger, mocker):
     mock_logger.error.assert_called_once_with(f'An unexpected error occurred: {err}')
 
 
-def test_kill_process_success(pr, mock_logger, mocker):
+def test_kill_process_success(
+    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     mocker.patch('platform.system', return_value='Linux')
     mock_popen = mocker.patch('subprocess.Popen')
 
@@ -227,7 +244,9 @@ def test_kill_process_success(pr, mock_logger, mocker):
     mock_popen.assert_called_once_with(f'kill -9 {port}', shell=True, stderr=-1)
 
 
-def test_kill_process_fail(pr, mock_logger, mocker):
+def test_kill_process_fail(
+    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     pid = 1234
     err = 'Access denied'
     mocker.patch('platform.system', return_value='Windows')
@@ -243,7 +262,9 @@ def test_kill_process_fail(pr, mock_logger, mocker):
     )
 
 
-def test_kill_process_unsupported_os(pr, mock_logger, mocker):
+def test_kill_process_unsupported_os(
+    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     mocker.patch('platform.system', return_value='UnsupportedOS')
     pid = 9999
     result = pr.kill_process(pid)
@@ -251,7 +272,9 @@ def test_kill_process_unsupported_os(pr, mock_logger, mocker):
     mock_logger.error.assert_called_once_with(pr._log_unsupported_os())
 
 
-def test_kill_process_unexpected_exception(pr, mock_logger, mocker):
+def test_kill_process_unexpected_exception(
+    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     err = Exception('Another error')
     mocker.patch('platform.system', return_value='Linux')
     mocker.patch('subprocess.Popen', side_effect=err)
@@ -262,7 +285,9 @@ def test_kill_process_unexpected_exception(pr, mock_logger, mocker):
     mock_logger.error.assert_called_once_with(pr._log_unexpected_error(err))
 
 
-def test_release_all_default_ports_success(pr, mock_logger, mocker):
+def test_release_all_default_ports_success(
+    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     mock_get_pid = mocker.patch.object(pr, 'get_pid_by_port')
     mock_kill = mocker.patch.object(pr, 'kill_process')
 
@@ -286,7 +311,9 @@ def test_release_all_default_ports_success(pr, mock_logger, mocker):
     )
 
 
-def test_release_all_invalid_port(pr, mock_logger, mocker):
+def test_release_all_invalid_port(
+    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     mock_get_pid = mocker.patch.object(pr, 'get_pid_by_port')
     mock_kill = mocker.patch.object(pr, 'kill_process')
     ports = ['invalid', 1234, 5678]
@@ -298,7 +325,9 @@ def test_release_all_invalid_port(pr, mock_logger, mocker):
     mock_logger.error.assert_called_once_with(pr._log_invalid_port(ports[0]))
 
 
-def test_release_all_unexpected_exception(pr, mock_logger, mocker):
+def test_release_all_unexpected_exception(
+    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     err = Exception('Release all error')
     port = 9010
     mock_get_pid = mocker.patch.object(pr, 'get_pid_by_port', side_effect=err)

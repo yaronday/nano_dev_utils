@@ -320,7 +320,10 @@ def test_timeout_with_fast_function(mock_logger: Mock, mocker: MockerFixture) ->
 
 @pytest.mark.asyncio
 async def test_timer_async_function(mock_logger: Mock, mocker: MockerFixture) -> None:
-    mocker.patch('asyncio.sleep', side_effect=lambda t: asyncio.sleep(0))
+    async def noop_sleep(t):
+        pass
+
+    mocker.patch('asyncio.sleep', noop_sleep)
     timer.init(precision=6)
 
     @timer.timeit()

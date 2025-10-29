@@ -52,6 +52,7 @@ class Timer:
 
                 @wraps(func)
                 async def async_wrapper(*args: RP.args, **kwargs: RP.kwargs) -> RR:
+                    func_name = func.__name__
                     total_elapsed_ns = 0
                     result: RR | None = None
                     for i in range(1, iterations + 1):
@@ -59,8 +60,9 @@ class Timer:
                         result = await async_func(*args, **kwargs)
                         duration_ns = time.perf_counter_ns() - start_ns
                         total_elapsed_ns += duration_ns
+
                         self._check_timeout(
-                            func.__name__,
+                            func_name,
                             i,
                             duration_ns,
                             total_elapsed_ns,
@@ -70,7 +72,7 @@ class Timer:
                     avg_elapsed_ns = total_elapsed_ns / iterations
                     value, unit = self._to_units(avg_elapsed_ns)
                     msg = self._formatted_msg(
-                        func.__name__, args, kwargs, value, unit, iterations
+                        func_name, args, kwargs, value, unit, iterations
                     )
                     lgr.info(msg)
                     return cast(RR, result)
@@ -81,6 +83,7 @@ class Timer:
 
                 @wraps(func)
                 def sync_wrapper(*args: RP.args, **kwargs: RP.kwargs) -> RR:
+                    func_name = func.__name__
                     total_elapsed_ns = 0
                     result: RR | None = None
                     for i in range(1, iterations + 1):
@@ -89,7 +92,7 @@ class Timer:
                         duration_ns = time.perf_counter_ns() - start_ns
                         total_elapsed_ns += duration_ns
                         self._check_timeout(
-                            func.__name__,
+                            func_name,
                             i,
                             duration_ns,
                             total_elapsed_ns,
@@ -99,7 +102,7 @@ class Timer:
                     avg_elapsed_ns = total_elapsed_ns / iterations
                     value, unit = self._to_units(avg_elapsed_ns)
                     msg = self._formatted_msg(
-                        func.__name__, args, kwargs, value, unit, iterations
+                        func_name, args, kwargs, value, unit, iterations
                     )
                     lgr.info(msg)
                     return cast(RR, result)

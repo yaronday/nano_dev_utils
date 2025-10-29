@@ -27,7 +27,7 @@ def test_initialization() -> None:
     assert timer.verbose
 
 
-def test_timeit_simple(mock_logger: Mock, mocker) -> None:
+def test_timeit_simple(mock_logger: Mock, mocker: MockerFixture) -> None:
     mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, int(923_470)])
 
     timer.init(precision=2)
@@ -319,7 +319,7 @@ def test_timeout_with_fast_function(mock_logger: Mock, mocker: MockerFixture) ->
 
 
 @pytest.mark.asyncio
-async def test_timer_async_function(mock_logger, mocker):
+async def test_timer_async_function(mock_logger: Mock, mocker: MockerFixture) -> None:
     mocker.patch('asyncio.sleep', side_effect=lambda t: asyncio.sleep(0))
     timer.init(precision=6)
 

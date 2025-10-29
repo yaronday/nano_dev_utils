@@ -1,6 +1,7 @@
 """nano-dev-utils - A collection of small Python utilities for developers.
 Copyright (c) 2025 Yaron Dayan
 """
+
 from pathlib import Path
 from importlib.metadata import version
 from .dynamic_importer import Importer
@@ -28,5 +29,5 @@ __all__ = [
     'ports_release',
     'importer',
     'filetree_display',
-    'DEFAULT_SFX'
+    'DEFAULT_SFX',
 ]

@@ -50,8 +50,11 @@ def test_ignore_specific_file(ftd: FileTreeDisplay, sample_dir: Path) -> None:
 
 def test_ignore_bad_dir_via_patch(ftd: FileTreeDisplay, sample_dir: Path) -> None:
     dir_to_ignore = 'ignored_dir'
-    with mock.patch.object(ftd, 'should_ignore',
-                           side_effect=lambda name, is_dir: name == dir_to_ignore and is_dir):
+    with mock.patch.object(
+        ftd,
+        'should_ignore',
+        side_effect=lambda name, is_dir: name == dir_to_ignore and is_dir,
+    ):
         tree = '\n'.join(ftd.build_tree(str(sample_dir)))
         assert dir_to_ignore not in tree
         assert 'ignored_file.txt' in tree
@@ -59,16 +62,19 @@ def test_ignore_bad_dir_via_patch(ftd: FileTreeDisplay, sample_dir: Path) -> Non
 
 def test_ignore_bad_file_via_patch(ftd: FileTreeDisplay, sample_dir: Path) -> None:
     file_to_ignore = 'ignored_file.txt'
-    with mock.patch.object(ftd, 'should_ignore',
-                           side_effect=lambda name, is_dir: name == file_to_ignore and not is_dir):
+    with mock.patch.object(
+        ftd,
+        'should_ignore',
+        side_effect=lambda name, is_dir: name == file_to_ignore and not is_dir,
+    ):
         tree = '\n'.join(ftd.build_tree(str(sample_dir)))
         assert file_to_ignore not in tree
         assert 'ignored_dir' in tree
 
 
-def test_display_mode(ftd: FileTreeDisplay,
-                      sample_dir: Path,
-                      capsys: pytest.CaptureFixture[str]) -> None:
+def test_display_mode(
+    ftd: FileTreeDisplay, sample_dir: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Test that display-only mode prints to stdout and not to file."""
     ftd.printout = True
     ftd.save2file = False
@@ -80,10 +86,7 @@ def test_display_mode(ftd: FileTreeDisplay,
 
 def test_style_and_indent_applied(ftd: FileTreeDisplay, sample_dir: Path) -> None:
     """Ensure style and indentation customize the formatted output."""
-    ftd.update({
-        'style': '*',
-        'indent': 3
-    })
+    ftd.update({'style': '*', 'indent': 3})
     lines = list(ftd.build_tree(str(sample_dir)))
     assert all(line.startswith('***') for line in lines if not line.startswith('['))
 
@@ -102,42 +105,40 @@ def test_get_tree_info_proper_format(ftd: FileTreeDisplay) -> None:
 
 def test_build_tree_permission_error(ftd: FileTreeDisplay) -> None:
     """Handle PermissionError in build_tree."""
-    with mock.patch("os.scandir", side_effect=PermissionError):
+    with mock.patch('os.scandir', side_effect=PermissionError):
         results = list(ftd.build_tree(str(ftd.root_path)))
         # Should yield one "Permission Denied" line
-        assert any("[Permission Denied]" in line for line in results)
+        assert any('[Permission Denied]' in line for line in results)
 
 
 def test_build_tree_oserror(ftd: FileTreeDisplay) -> None:
     """Handle generic OSError in build_tree."""
-    with mock.patch("os.scandir", side_effect=OSError):
+    with mock.patch('os.scandir', side_effect=OSError):
         results = list(ftd.build_tree(str(ftd.root_path)))
-        assert any("[Error reading directory]" in line for line in results)
+        assert any('[Error reading directory]' in line for line in results)
 
 
 def test_buffer2file_permission_error(ftd: FileTreeDisplay, tmp_path: Path) -> None:
     """buffer2file should raise on PermissionError."""
     ftd.format_out_path = mock.Mock()
-    fake_path = tmp_path / "fake.txt"
+    fake_path = tmp_path / 'fake.txt'
     ftd.format_out_path.return_value = fake_path
 
-    with mock.patch.object(Path, "open",
-                           side_effect=PermissionError("no permission")):
+    with mock.patch.object(Path, 'open', side_effect=PermissionError('no permission')):
         with pytest.raises(PermissionError) as exc:
-            ftd.buffer2file("test content")
-        assert "no permission" in str(exc.value)
+            ftd.buffer2file('test content')
+        assert 'no permission' in str(exc.value)
 
 
 def test_buffer2file_oserror(ftd: FileTreeDisplay, tmp_path: Path) -> None:
     """buffer2file should propagate generic OSError."""
     ftd.format_out_path = mock.Mock()
-    fake_path = tmp_path / "fake.txt"
+    fake_path = tmp_path / 'fake.txt'
     ftd.format_out_path.return_value = fake_path
-    with mock.patch.object(Path, "open",
-                           side_effect=OSError("disk error")):
+    with mock.patch.object(Path, 'open', side_effect=OSError('disk error')):
         with pytest.raises(OSError) as exc:
-            ftd.buffer2file("test")
-        assert "Error writing file" in str(exc.value)
+            ftd.buffer2file('test')
+        assert 'Error writing file' in str(exc.value)
 
 
 def test_buffer2file_creates_file(ftd: FileTreeDisplay) -> None:
@@ -183,8 +184,7 @@ def test_buffer2file_overwrites_existing_file(ftd: FileTreeDisplay) -> None:
     assert f'{prefix}1' in content
 
 
-def test_buffer2file_empty_iterator(ftd: FileTreeDisplay,
-                                    sample_dir: Path) -> None:
+def test_buffer2file_empty_iterator(ftd: FileTreeDisplay, sample_dir: Path) -> None:
     """Test behavior with an empty header and an empty iterator."""
     out_file = sample_dir / 'empty_file.txt'
     ftd.filepath = str(out_file)
@@ -197,7 +197,7 @@ def test_buffer2file_empty_iterator(ftd: FileTreeDisplay,
 
 def test_format_out_path_with_filepath(ftd: FileTreeDisplay, tmp_path: Path) -> None:
     """format_out_path uses filepath property if set."""
-    ftd.filepath = str(tmp_path / "myfile.txt")
+    ftd.filepath = str(tmp_path / 'myfile.txt')
     out = ftd.format_out_path()
     assert out == Path(ftd.filepath)
 
@@ -205,7 +205,7 @@ def test_format_out_path_with_filepath(ftd: FileTreeDisplay, tmp_path: Path) -> 
 def test_format_out_path_without_filepath(ftd: FileTreeDisplay, tmp_path: Path) -> None:
     """format_out_path computes output filename if filepath not set."""
     ftd.filepath = None
-    DEFAULT_SFX = "_filetree.txt"
-    expected = tmp_path / f"{tmp_path.name}{DEFAULT_SFX}"
+    DEFAULT_SFX = '_filetree.txt'
+    expected = tmp_path / f'{tmp_path.name}{DEFAULT_SFX}'
     out = ftd.format_out_path()
     assert out == expected

@@ -20,7 +20,7 @@ class FileTreeDisplay:
         filepath: str | None = None,
         ignore_dirs: list[str] | set[str] | None = None,
         ignore_files: list[str] | set[str] | None = None,
-        style: str = "-",
+        style: str = '-',
         indent: int = 1,
         save2file: bool = True,
         printout: bool = False,
@@ -63,7 +63,7 @@ class FileTreeDisplay:
         if not self.root_path.is_dir():
             raise NotADirectoryError(f"The path '{root_path_str}' is not a directory.")
 
-        iterator = self.build_tree(root_path_str, "")
+        iterator = self.build_tree(root_path_str, '')
 
         tree_info = self.get_tree_info(iterator)
 
@@ -144,7 +144,7 @@ class FileTreeDisplay:
         """
         out_file = self.format_out_path()
         try:
-            with out_file.open("w", encoding="utf-8") as f:
+            with out_file.open('w', encoding='utf-8') as f:
                 f.write(buffer)
 
         except PermissionError as e:
@@ -156,6 +156,7 @@ class FileTreeDisplay:
 
     def format_out_path(self) -> Path:
         alt_file_name = f'{self.root_path.name}{DEFAULT_SFX}'
-        out_file = Path(self.filepath) if self.filepath \
-            else (self.root_path / alt_file_name)
+        out_file = (
+            Path(self.filepath) if self.filepath else (self.root_path / alt_file_name)
+        )
         return out_file

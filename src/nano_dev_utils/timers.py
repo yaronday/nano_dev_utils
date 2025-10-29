@@ -15,8 +15,6 @@ from typing import (
 from nano_dev_utils.common import update
 
 
-UNITS = [(1e9, 's'), (1e6, 'ms'), (1e3, 'μs'), (1.0, 'ns')]
-
 lgr = logging.getLogger(__name__)
 """Module-level logger. Configure using logging.basicConfig() in your application."""
 
@@ -55,6 +53,8 @@ class Timer:
         RP = ParamSpec('RP')
         RR = TypeVar('RR')
 
+        precision = self.precision
+
         def decorator(
             func: Callable[RP, RR] | Callable[RP, Awaitable[RR]],
         ) -> Callable[RP, Any]:
@@ -81,9 +81,9 @@ class Timer:
                             per_iteration,
                         )
                     avg_elapsed_ns = total_elapsed_ns / iterations
-                    value, unit = self._to_units(avg_elapsed_ns)
+                    duration_str = self._duration_formatter(avg_elapsed_ns, precision)
                     msg = self._formatted_msg(
-                        func_name, args, kwargs, value, unit, iterations
+                        func_name, args, kwargs, duration_str, iterations
                     )
                     lgr.info(msg)
                     return cast(RR, result)
@@ -111,9 +111,9 @@ class Timer:
                             per_iteration,
                         )
                     avg_elapsed_ns = total_elapsed_ns / iterations
-                    value, unit = self._to_units(avg_elapsed_ns)
+                    duration_str = self._duration_formatter(avg_elapsed_ns, precision)
                     msg = self._formatted_msg(
-                        func_name, args, kwargs, value, unit, iterations
+                        func_name, args, kwargs, duration_str, iterations
                     )
                     lgr.info(msg)
                     return cast(RR, result)
@@ -134,39 +134,66 @@ class Timer:
         """Raise TimeoutError if timeout is exceeded."""
         if timeout is None:
             return
-        timeout_exceeded = f'{func_name} exceeded {timeout:.{self.precision}f}s'
+        precision = self.precision
+        timeout_exceeded = f'{func_name} exceeded {timeout:.{precision}f}s'
         if per_iteration:
             duration_s = duration_ns / 1e9
             if duration_s > timeout:
                 raise TimeoutError(
                     f'{timeout_exceeded} on iteration {i} '
-                    f'(took {duration_s:.{self.precision}f}s)'
+                    f'(took {duration_s:.{precision}f}s)'
                 )
         else:
             total_duration_s = total_elapsed_ns / 1e9
             if total_duration_s > timeout:
                 raise TimeoutError(
                     f'{timeout_exceeded} after {i} iterations '
-                    f'(took {total_duration_s:.{self.precision}f}s)'
+                    f'(took {total_duration_s:.{precision}f}s)'
                 )
 
     @staticmethod
-    def _to_units(avg_elapsed_ns: float) -> tuple[float, str]:
-        """Convert nanoseconds to the appropriate time unit."""
-        for div, u in UNITS:
-            if avg_elapsed_ns >= div or u == 'ns':
-                return avg_elapsed_ns / div, u
-        assert False, 'unreachable'
+    def _duration_formatter(elapsed_ns: float, precision: int = 4) -> str:
+        """Convert nanoseconds to the appropriate time unit, supporting multi-unit results."""
+        ns_sec, ns_min, ns_hour = 1e9, 6e10, 3.6e12
+        ns_ms, ns_us = 1e6, 1e3
+
+        if elapsed_ns < ns_sec:
+            if elapsed_ns >= ns_ms:
+                return f'{elapsed_ns / ns_ms:.{precision}f} [ms]'
+            elif elapsed_ns >= ns_us:
+                return f'{elapsed_ns / ns_us:.{precision}f} [μs]'
+            return f'{elapsed_ns:.2f} [ns]'
+
+        if elapsed_ns < ns_min:
+            seconds = elapsed_ns / ns_sec
+            return f'{seconds:.1f}s' if seconds < 10 else f'{seconds:.0f} [s]'
+
+        if elapsed_ns >= ns_hour:
+            hours = int(elapsed_ns / ns_hour)
+            rem = elapsed_ns % ns_hour
+            mins = int(rem / ns_min)
+            secs = int((rem % ns_min) / ns_sec)
+
+            parts = [f'{hours} [h]']
+            if mins:
+                parts.append(f'{mins} [m]')
+            if secs:
+                parts.append(f'{secs} [s]')
+            return ' '.join(parts)
+
+        else:
+            minutes = int(elapsed_ns / ns_min)
+            seconds = int((elapsed_ns % ns_min) / ns_sec)
+            return f'{minutes} [m] {seconds} [s]' if seconds else f'{minutes} [m]'
 
     def _formatted_msg(
         self,
         func_name: str,
         args: tuple,
         kwargs: dict,
-        value: float,
-        unit: str,
+        duration_str: str,
         iterations: int,
     ) -> str:
         extra_info = f'{args} {kwargs} ' if self.verbose else ''
         iter_info = f' (avg. over {iterations} runs)' if iterations > 1 else ''
-        return f'{func_name} {extra_info}took {value:.{self.precision}f} [{unit}]{iter_info}'
+        return f'{func_name} {extra_info}took {duration_str}{iter_info}'

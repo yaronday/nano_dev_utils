@@ -30,7 +30,7 @@ class Timer:
     def init(self, *args, **kwargs) -> None:
         self.__init__(*args, **kwargs)
 
-    def update(self, attrs: dict) -> None:
+    def update(self, attrs: dict[str, Any]) -> None:
         update(self, attrs)
 
     def timeit(
@@ -39,7 +39,16 @@ class Timer:
         timeout: float | None = None,
         per_iteration: bool = False,
     ) -> Callable[[Callable[P, Any]], Callable[P, Any]]:
-        """Decorator that times sync or async function execution with optional timeout."""
+        """ Decorator that measures execution time for sync / async functions.
+
+        Args:
+            iterations: Number of times to run the function (averaged for reporting).
+            timeout: Optional max allowed time (in seconds); raises TimeoutError if exceeded.
+            per_iteration: If True, enforces timeout per iteration, else cumulatively.
+
+        Returns:
+        A decorated function that behaves identically to the original, with timing logged.
+        """
 
         RP = ParamSpec('RP')
         RR = TypeVar('RR')

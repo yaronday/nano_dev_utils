@@ -9,6 +9,8 @@ from .release_ports import PortsRelease, PROXY_SERVER, INSPECTOR_CLIENT
 from .common import update
 
 timer = Timer()
+ports_release = PortsRelease()
+importer = Importer()
 
 __version__ = version('nano-dev-utils')
 
@@ -20,4 +22,6 @@ __all__ = [
     'INSPECTOR_CLIENT',
     'update',
     'timer',
+    'ports_release',
+    'importer'
 ]

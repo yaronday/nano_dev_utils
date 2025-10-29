@@ -14,6 +14,9 @@ from typing import (
 
 from nano_dev_utils.common import update
 
+
+UNITS = [(1e9, 's'), (1e6, 'ms'), (1e3, 'μs'), (1.0, 'ns')]
+
 lgr = logging.getLogger(__name__)
 """Module-level logger. Configure using logging.basicConfig() in your application."""
 
@@ -25,7 +28,6 @@ class Timer:
     def __init__(self, precision: int = 4, verbose: bool = False):
         self.precision = precision
         self.verbose = verbose
-        self.units = [(1e9, 's'), (1e6, 'ms'), (1e3, 'μs'), (1.0, 'ns')]
 
     def init(self, *args, **kwargs) -> None:
         self.__init__(*args, **kwargs)
@@ -148,13 +150,13 @@ class Timer:
                     f'(took {total_duration_s:.{self.precision}f}s)'
                 )
 
-    def _to_units(self, avg_elapsed_ns: float) -> tuple[float, str]:
+    @staticmethod
+    def _to_units(avg_elapsed_ns: float) -> tuple[float, str]:
         """Convert nanoseconds to the appropriate time unit."""
-        return next(
-            (avg_elapsed_ns / div, u)
-            for div, u in self.units
-            if avg_elapsed_ns >= div or u == 'ns'
-        )
+        for div, u in UNITS:
+            if avg_elapsed_ns >= div or u == 'ns':
+                return avg_elapsed_ns / div, u
+        assert False, "unreachable"
 
     def _formatted_msg(
         self,

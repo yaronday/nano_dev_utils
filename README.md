@@ -14,13 +14,13 @@ This module provides a `Timer` class for measuring the execution time of code bl
     * `precision`: The number of decimal places to record and display time durations. Defaults to 4.
     * `verbose`: Optionally displays the function's positional arguments (args) and keyword arguments (kwargs). Defaults to `False`.
 
-* **`timeit(
+* **`def timeit(
         self,
         iterations: int = 1,
         timeout: float | None = None,
-        per_iteration: bool = False
-    ) -> Callable[[Callable[P, R]], Callable[P, R | None]]`**:   
-      Decorator that times function execution with advanced features:
+        per_iteration: bool = False,
+    ) -> Callable[[Callable[P, Any]], Callable[P, Any]]:`**:   
+      Decorator that times either **sync** or **async** function execution with advanced features:
     * `iterations`: Number of times to run the function (for averaging). Defaults to 1.
     * `timeout`: Maximum allowed execution time in seconds. When exceeded:
         * Raises `TimeoutError` immediately

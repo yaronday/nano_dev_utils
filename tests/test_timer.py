@@ -339,14 +339,17 @@ def test_timeout_with_fast_function(mock_logger: Mock, mocker: MockerFixture) ->
 
 
 @pytest.mark.asyncio
-async def test_async_function_timing(timer_obj: Timer, async_sleep_mocker: AsyncMock) -> None:
+async def test_async_function_timing(
+    timer_obj: Timer, async_sleep_mocker: AsyncMock
+) -> None:
     """Test timing of simple async functions."""
+
     @timer_obj.timeit()
     async def async_noop():
-        return "done"
+        return 'done'
 
     result = await async_noop()
-    assert result == "done"
+    assert result == 'done'
 
 
 @pytest.mark.asyncio
@@ -367,6 +370,35 @@ async def test_timer_async_function(
     log_args = mock_logger.info.call_args[0][0]
     assert 'fast_async' in log_args
     assert re.search(r'fast_async took\s+([0-9]*\.[0-9]+)\s*\[?(ns|μs)]?', log_args)
+
+
+@pytest.mark.asyncio
+async def test_async_function_with_args(
+    timer_obj: Timer, async_sleep_mocker: AsyncMock
+) -> None:
+    """Test async function with arguments."""
+
+    @timer_obj.timeit()
+    async def async_add(a: int, b: int):
+        return a + b
+
+    result = await async_add(5, 3)
+    assert result == 8
+
+
+@pytest.mark.asyncio
+async def test_async_function_with_delay(
+    timer_obj: Timer, async_sleep_mocker: AsyncMock
+) -> None:
+    """Test async function that would normally have delay."""
+
+    @timer_obj.timeit()
+    async def async_with_sleep():
+        await asyncio.sleep(1)
+        return 'completed'
+
+    result = await async_with_sleep()
+    assert result == 'completed'
 
 
 # Test nanoseconds

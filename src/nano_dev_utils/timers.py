@@ -156,7 +156,7 @@ class Timer:
         for div, u in UNITS:
             if avg_elapsed_ns >= div or u == 'ns':
                 return avg_elapsed_ns / div, u
-        assert False, "unreachable"
+        assert False, 'unreachable'
 
     def _formatted_msg(
         self,

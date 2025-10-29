@@ -39,7 +39,7 @@ class Timer:
         timeout: float | None = None,
         per_iteration: bool = False,
     ) -> Callable[[Callable[P, Any]], Callable[P, Any]]:
-        """ Decorator that measures execution time for sync / async functions.
+        """Decorator that measures execution time for sync / async functions.
 
         Args:
             iterations: Number of times to run the function (averaged for reporting).

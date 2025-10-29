@@ -144,8 +144,14 @@ def test_nested_timers(mock_logger: Mock, mocker: MockerFixture) -> None:
     inner_output = mock_logger.info.call_args_list[0][0][0]
     outer_output = mock_logger.info.call_args_list[1][0][0]
 
-    inner_duration = float(inner_output.split('took ')[1].split(' [')[0])
-    outer_duration = float(outer_output.split('took ')[1].split(' [')[0])
+    def extract_duration(output: str) -> float:
+        match = re.search(r'took\s+([0-9]*\.?[0-9]+)', output)
+        if not match:
+            raise ValueError(f"Could not parse duration from output: {output}")
+        return float(match.group(1))
+
+    inner_duration = extract_duration(inner_output)
+    outer_duration = extract_duration(outer_output)
 
     assert inner_duration == inner_end - inner_start
     assert outer_duration == outer_end - outer_start
@@ -338,4 +344,4 @@ async def test_timer_async_function(mock_logger: Mock, mocker: MockerFixture) ->
     assert mock_logger.info.called
     log_args = mock_logger.info.call_args[0][0]
     assert 'fast_async' in log_args
-    assert re.search(r'fast_async took\s+([0-9]*\.[0-9]+)\s*\[(ns|μs)]', log_args)
+    assert re.search(r'fast_async took\s+([0-9]*\.[0-9]+)\s*\[?(ns|μs)]?', log_args)

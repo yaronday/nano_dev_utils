@@ -39,7 +39,7 @@ def test_timeit_simple(mock_logger: Mock, mocker: MockerFixture) -> None:
     result = sample_function()
     assert result == 'result'
     mock_time.assert_any_call()
-    mock_logger.info.assert_called_once_with('sample_function took 923.47 [μs]')
+    mock_logger.info.assert_called_once_with('sample_function took 923.47μs')
 
 
 def test_timeit_no_args_kwargs(mock_logger: Mock, mocker: MockerFixture) -> None:
@@ -54,7 +54,7 @@ def test_timeit_no_args_kwargs(mock_logger: Mock, mocker: MockerFixture) -> None
     assert result == 'yet another result'
     mock_time.assert_any_call()
     mock_logger.info.assert_called_once_with(
-        'yet_another_function () {} took 0.50 [ns]'
+        'yet_another_function () {} took 0.50ns'
     )
 
 
@@ -89,7 +89,7 @@ def test_multithreaded_timing(mock_logger: Mock, mocker: MockerFixture) -> None:
     assert len(set(results)) == num_of_threads
 
     for call_args in mock_logger.info.call_args_list:
-        assert f'took {sim_time_us:.{timer.precision}f} [μs]' in call_args[0][0]
+        assert f'took {sim_time_us:.{timer.precision}f}μs' in call_args[0][0]
 
 
 def test_verbose_mode(mock_logger: Mock, mocker: MockerFixture) -> None:
@@ -107,11 +107,12 @@ def test_verbose_mode(mock_logger: Mock, mocker: MockerFixture) -> None:
     assert '(1, 2)' in output  # checking positional args
     assert "'c': 4" in output  # checking kwargs
     mock_logger.info.assert_called_once_with(
-        "func_with_args (1, 2) {'c': 4} took 42.3456 [μs]"
+        "func_with_args (1, 2) {'c': 4} took 42.3456μs"
     )
     assert res == 7  # checking returned value preservation
 
 
+# todo fix unit str (no brackets)
 def test_nested_timers(mock_logger: Mock, mocker: MockerFixture) -> None:
     """Test that nested timers work correctly"""
     outer_start = 1000
@@ -212,7 +213,7 @@ def test_timeit_with_iterations(mock_logger: Mock, mocker: MockerFixture) -> Non
     mock_time.assert_any_call()
 
     mock_logger.info.assert_called_once_with(
-        f'sample_function took {sum(sim_times_ns) / 3e3:.{timer.precision}f} [μs] (avg. over {k} runs)'
+        f'sample_function took {sum(sim_times_ns) / 3e3:.{timer.precision}f}μs (avg. over {k} runs)'
     )
 
 
@@ -313,11 +314,12 @@ def test_timeout_with_fast_function(mock_logger: Mock, mocker: MockerFixture) ->
     result = func(sim_time_s)
 
     mock_logger.info.assert_called_once_with(
-        f'func took {sim_time_ms:.{timer.precision}f} [ms]'
+        f'func took {sim_time_ms:.{timer.precision}f}ms'
     )
     assert result == f'{SIM_COMPLETE_TIME} {sim_time_s}s'
 
 
+# todo fix unit str (no brackets)
 @pytest.mark.asyncio
 async def test_timer_async_function(mock_logger: Mock, mocker: MockerFixture) -> None:
     async def noop_sleep(t):

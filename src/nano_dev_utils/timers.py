@@ -161,14 +161,14 @@ class Timer:
 
         if elapsed_ns < ns_sec:
             if elapsed_ns >= ns_ms:
-                return f'{elapsed_ns / ns_ms:.{precision}f} [ms]'
+                return f'{elapsed_ns / ns_ms:.{precision}f}ms'
             elif elapsed_ns >= ns_us:
-                return f'{elapsed_ns / ns_us:.{precision}f} [μs]'
-            return f'{elapsed_ns:.2f} [ns]'
+                return f'{elapsed_ns / ns_us:.{precision}f}μs'
+            return f'{elapsed_ns:.2f}ns'
 
         if elapsed_ns < ns_min:
             seconds = elapsed_ns / ns_sec
-            return f'{seconds:.1f}s' if seconds < 10 else f'{seconds:.0f} [s]'
+            return f'{seconds:.1f}s' if seconds < 10 else f'{seconds:.0f}s'
 
         if elapsed_ns >= ns_hour:
             hours = int(elapsed_ns / ns_hour)
@@ -176,17 +176,17 @@ class Timer:
             mins = int(rem / ns_min)
             secs = int((rem % ns_min) / ns_sec)
 
-            parts = [f'{hours} [h]']
+            parts = [f'{hours}h']
             if mins:
-                parts.append(f'{mins} [m]')
+                parts.append(f'{mins}m')
             if secs:
-                parts.append(f'{secs} [s]')
+                parts.append(f'{secs}s')
             return ' '.join(parts)
 
         else:
             minutes = int(elapsed_ns / ns_min)
             seconds = int((elapsed_ns % ns_min) / ns_sec)
-            return f'{minutes} [m] {seconds} [s]' if seconds else f'{minutes} [m]'
+            return f'{minutes}m {seconds}s' if seconds else f'{minutes}m'
 
     @staticmethod
     def _formatted_msg(

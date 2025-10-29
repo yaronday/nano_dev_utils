@@ -123,19 +123,20 @@ class Timer:
         """Raise TimeoutError if timeout is exceeded."""
         if timeout is None:
             return
+        timeout_exceeded = f'{func_name} exceeded {timeout:.{self.precision}f}s'
         if per_iteration:
             duration_s = duration_ns / 1e9
             if duration_s > timeout:
                 raise TimeoutError(
-                    f'{func_name} exceeded {timeout:.{self.precision}f}s on '
-                    f'iteration {i} (took {duration_s:.{self.precision}f}s)'
+                    f'{timeout_exceeded} on iteration {i} '
+                    f'(took {duration_s:.{self.precision}f}s)'
                 )
         else:
             total_duration_s = total_elapsed_ns / 1e9
             if total_duration_s > timeout:
                 raise TimeoutError(
-                    f'{func_name} exceeded {timeout:.{self.precision}f}s '
-                    f'after {i} iterations (took {total_duration_s:.{self.precision}f}s)'
+                    f'{timeout_exceeded} after {i} iterations '
+                    f'(took {total_duration_s:.{self.precision}f}s)'
                 )
 
     def _to_units(self, avg_elapsed_ns: float) -> tuple[float, str]:

@@ -23,5 +23,5 @@ __all__ = [
     'update',
     'timer',
     'ports_release',
-    'importer'
+    'importer',
 ]

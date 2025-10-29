@@ -2,6 +2,9 @@ import platform
 import subprocess
 import logging
 
+from nano_dev_utils.common import update
+
+
 lgr = logging.getLogger(__name__)
 """Module-level logger. Configure using logging.basicConfig() in your application."""
 
@@ -59,6 +62,9 @@ class PortsRelease:
     @staticmethod
     def _log_unsupported_os() -> str:
         return f'Unsupported OS: {platform.system()}'
+
+    def update(self, attrs: dict) -> None:
+        update(self, attrs)
 
     def get_pid_by_port(self, port: int) -> int | None:
         """Gets the process ID (PID) listening on the specified port."""

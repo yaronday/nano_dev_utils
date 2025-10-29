@@ -1,6 +1,6 @@
 import pytest
 from types import ModuleType
-from src.nano_dev_utils.dynamic_importer import Importer
+from nano_dev_utils.dynamic_importer import Importer
 
 
 @pytest.fixture

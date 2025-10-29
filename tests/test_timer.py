@@ -1,22 +1,36 @@
 import threading
+import asyncio
 import pytest
-from src.nano_dev_utils.timers import Timer
+import logging
+import re
+
+from pytest_mock import MockerFixture
+from unittest.mock import Mock
+from nano_dev_utils import timers, timer
+
+SIM_COMPLETE_TIME = 'Function completed in simulated'
 
 
-def test_initialization():
-    timer = Timer()
+@pytest.fixture
+def mock_logger(mocker):
+    mock_logger = mocker.MagicMock(spec=logging.Logger)
+    timers.lgr = mock_logger
+    return mock_logger
+
+
+def test_initialization() -> None:
     assert timer.precision == 4
     assert not timer.verbose
 
-    timer_custom = Timer(precision=6, verbose=True)
-    assert timer_custom.precision == 6
-    assert timer_custom.verbose
+    timer.init(6, True)
+    assert timer.precision == 6
+    assert timer.verbose
 
 
-def test_timeit_simple(mocker):
-    mock_print = mocker.patch('builtins.print')
-    mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, 9.23467e5])
-    timer = Timer(precision=2)
+def test_timeit_simple(mock_logger: Mock, mocker) -> None:
+    mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, int(923_470)])
+
+    timer.init(precision=2)
 
     @timer.timeit()
     def sample_function():
@@ -25,13 +39,12 @@ def test_timeit_simple(mocker):
     result = sample_function()
     assert result == 'result'
     mock_time.assert_any_call()
-    mock_print.assert_called_once_with('sample_function took 923.47 [μs]')
+    mock_logger.info.assert_called_once_with('sample_function took 923.47 [μs]')
 
 
-def test_timeit_no_args_kwargs(mocker):
-    mock_print = mocker.patch('builtins.print')
+def test_timeit_no_args_kwargs(mock_logger: Mock, mocker: MockerFixture) -> None:
     mock_time = mocker.patch('time.perf_counter_ns', side_effect=[1.0, 1.5])
-    timer = Timer(precision=2, verbose=True)
+    timer.init(precision=2, verbose=True)
 
     @timer.timeit()
     def yet_another_function():
@@ -40,12 +53,13 @@ def test_timeit_no_args_kwargs(mocker):
     result = yet_another_function()
     assert result == 'yet another result'
     mock_time.assert_any_call()
-    mock_print.assert_called_once_with('yet_another_function () {} took 0.50 [ns]')
+    mock_logger.info.assert_called_once_with(
+        'yet_another_function () {} took 0.50 [ns]'
+    )
 
 
-def test_multithreaded_timing(mocker):
+def test_multithreaded_timing(mock_logger: Mock, mocker: MockerFixture) -> None:
     """Test timer works correctly across threads"""
-    mock_print = mocker.patch('builtins.print')
     sim_time_us = 1  # μs
     sim_time_ns = sim_time_us * 1e3
     num_of_threads = 4
@@ -55,7 +69,6 @@ def test_multithreaded_timing(mocker):
         autospec=True,
     )
 
-    timer = Timer()
     results = []
 
     @timer.timeit()
@@ -72,35 +85,34 @@ def test_multithreaded_timing(mocker):
     for t in threads:
         t.join()
 
-    assert mock_print.call_count == num_of_threads
+    assert mock_logger.info.call_count == num_of_threads
     assert len(set(results)) == num_of_threads
 
-    for call_args in mock_print.call_args_list:
+    for call_args in mock_logger.info.call_args_list:
         assert f'took {sim_time_us:.{timer.precision}f} [μs]' in call_args[0][0]
 
 
-def test_verbose_mode(mocker):
+def test_verbose_mode(mock_logger: Mock, mocker: MockerFixture) -> None:
     """Test that verbose mode includes positional and
     keyword arguments in output and preserves the wrapped func result"""
-    mock_print = mocker.patch('builtins.print')
     mocker.patch('time.perf_counter_ns', side_effect=[1e4, 5.23456e4])
-    verbose_timer = Timer(verbose=True)
+    timer.init(verbose=True)
 
-    @verbose_timer.timeit()
+    @timer.timeit()
     def func_with_args(a, b, c=3):
         return a + b + c
 
     res = func_with_args(1, 2, c=4)
-    output = mock_print.call_args[0][0]
+    output = mock_logger.info.call_args[0][0]
     assert '(1, 2)' in output  # checking positional args
     assert "'c': 4" in output  # checking kwargs
-    mock_print.assert_called_once_with(
+    mock_logger.info.assert_called_once_with(
         "func_with_args (1, 2) {'c': 4} took 42.3456 [μs]"
     )
     assert res == 7  # checking returned value preservation
 
 
-def test_nested_timers(mocker):
+def test_nested_timers(mock_logger: Mock, mocker: MockerFixture) -> None:
     """Test that nested timers work correctly"""
     outer_start = 1000
     inner_start = 1100
@@ -116,9 +128,6 @@ def test_nested_timers(mocker):
         ],
     )
 
-    mock_print = mocker.patch('builtins.print')
-    timer = Timer()
-
     @timer.timeit()
     def outer():
         @timer.timeit()
@@ -130,9 +139,9 @@ def test_nested_timers(mocker):
     outer()
 
     # Should have two print calls (inner and outer)
-    assert mock_print.call_count == 2
-    inner_output = mock_print.call_args_list[0][0][0]
-    outer_output = mock_print.call_args_list[1][0][0]
+    assert mock_logger.info.call_count == 2
+    inner_output = mock_logger.info.call_args_list[0][0][0]
+    outer_output = mock_logger.info.call_args_list[1][0][0]
 
     inner_duration = float(inner_output.split('took ')[1].split(' [')[0])
     outer_duration = float(outer_output.split('took ')[1].split(' [')[0])
@@ -142,10 +151,8 @@ def test_nested_timers(mocker):
     assert outer_duration > inner_duration
 
 
-def test_unit_scaling(mocker):
+def test_unit_scaling(mock_logger: Mock, mocker: MockerFixture) -> None:
     """Test the time unit selection logic directly"""
-    mock_print = mocker.patch('builtins.print')
-
     boundary_cases = [
         (1e3 - 1, 'ns'),
         (1e3, 'μs'),
@@ -157,23 +164,23 @@ def test_unit_scaling(mocker):
 
     for ns, expected_unit in boundary_cases:
         mocker.patch('time.perf_counter_ns', side_effect=[0, ns])
-        timer = Timer(precision=2)
+        timer.update({'precision': 2})
 
         @timer.timeit()
         def dummy():
             pass
 
         dummy()
-        printed_output = mock_print.call_args[0][0]
-        assert expected_unit in printed_output, (
+        logged_output = mock_logger.info.call_args[0][0]
+        assert expected_unit in logged_output, (
             f"Failed for {ns:,}ns → Expected '{expected_unit}' in output. "
-            f'Got: {printed_output}'
+            f'Got: {logged_output}'
         )
 
 
-def test_function_metadata_preserved():
+def test_function_metadata_preserved() -> None:
     """Test that function metadata (name, docstring) is preserved"""
-    timer = Timer(precision=3)
+    timer.update({'precision': 3})
 
     @timer.timeit()
     def dummy_func():
@@ -184,9 +191,7 @@ def test_function_metadata_preserved():
     assert dummy_func.__doc__ == 'Test docstring'
 
 
-def test_timeit_with_iterations(mocker):
-    mock_print = mocker.patch('builtins.print')
-
+def test_timeit_with_iterations(mock_logger: Mock, mocker: MockerFixture) -> None:
     k = 3
     sim_times_ns = [0, 1e3, 0, 2e3, 0, 3e3]
     mock_time = mocker.patch(
@@ -195,7 +200,7 @@ def test_timeit_with_iterations(mocker):
         autospec=True,
     )
 
-    timer = Timer(precision=2)
+    timer.init(precision=2)
 
     @timer.timeit(iterations=k)
     def sample_function():
@@ -206,12 +211,12 @@ def test_timeit_with_iterations(mocker):
     assert result == 'done'
     mock_time.assert_any_call()
 
-    mock_print.assert_called_once_with(
+    mock_logger.info.assert_called_once_with(
         f'sample_function took {sum(sim_times_ns) / 3e3:.{timer.precision}f} [μs] (avg. over {k} runs)'
     )
 
 
-def test_timeout_single_iteration(mocker):
+def test_timeout_single_iteration(mocker: MockerFixture) -> None:
     cfg_timeout_s = 0.1
     duration_s = cfg_timeout_s + 0.1
     current_time_ns = 0.0
@@ -222,7 +227,8 @@ def test_timeout_single_iteration(mocker):
         side_effect=[0.0, duration_ns],
         autospec=True,
     )
-    timer = Timer(precision=6, verbose=True)
+
+    timer.init(6, True)
 
     @timer.timeit(timeout=cfg_timeout_s)
     def timed_function():
@@ -235,7 +241,7 @@ def test_timeout_single_iteration(mocker):
     assert f'took {duration_s:.{timer.precision}f}s' in str(exc_info.value)
 
 
-def test_timeout_multiple_iterations(mocker):
+def test_timeout_multiple_iterations(mocker: MockerFixture) -> None:
     sim_time_per_iter_s = 0.3
     sim_time_per_iter_ns = sim_time_per_iter_s * 1e9
 
@@ -248,11 +254,11 @@ def test_timeout_multiple_iterations(mocker):
         autospec=True,
     )
 
-    timer = Timer(precision=6, verbose=True)
+    timer.init(6, True)
 
     @timer.timeit(iterations=k, timeout=timeout_threshold)
     def func(duration: float) -> str:
-        return f'Function completed in simulated {duration}s'
+        return f'{SIM_COMPLETE_TIME} {duration}s'
 
     with pytest.raises(TimeoutError) as exc_info:
         func(sim_time_per_iter_s)
@@ -268,18 +274,18 @@ def test_timeout_multiple_iterations(mocker):
     assert str(exc_info.value) == expected_message_template
 
 
-def test_timeout_per_iteration(mocker):
+def test_timeout_per_iteration(mocker: MockerFixture) -> None:
     sim_time_s = 0.2
     cfg_timeout = 0.1
     mocker.patch(
         'time.perf_counter_ns', side_effect=[0.0, sim_time_s * 1e9], autospec=True
     )
 
-    timer = Timer(precision=6, verbose=True)
+    timer.init(6, True)
 
     @timer.timeit(iterations=5, timeout=cfg_timeout, per_iteration=True)
     def func(duration: float) -> str:
-        return f'Function completed in simulated {duration}s'
+        return f'{SIM_COMPLETE_TIME} {duration}s'
 
     with pytest.raises(TimeoutError) as exc_info:
         func(sim_time_s)
@@ -290,8 +296,7 @@ def test_timeout_per_iteration(mocker):
     ) in str(exc_info.value)
 
 
-def test_timeout_with_fast_function(mocker):
-    mock_print = mocker.patch('builtins.print')
+def test_timeout_with_fast_function(mock_logger: Mock, mocker: MockerFixture) -> None:
     sim_time_ms = 50.1
     sim_time_s = sim_time_ms / 1e3
 
@@ -299,15 +304,33 @@ def test_timeout_with_fast_function(mocker):
         'time.perf_counter_ns', side_effect=[0, sim_time_ms * 1e6], autospec=True
     )
 
-    timer = Timer(precision=4)
+    timer.init()
 
     @timer.timeit(timeout=1.0)
     def func(duration: float) -> str:
-        return f'Function completed in simulated {duration}s'
+        return f'{SIM_COMPLETE_TIME} {duration}s'
 
     result = func(sim_time_s)
 
-    mock_print.assert_called_once_with(
+    mock_logger.info.assert_called_once_with(
         f'func took {sim_time_ms:.{timer.precision}f} [ms]'
     )
-    assert result == f'Function completed in simulated {sim_time_s}s'
+    assert result == f'{SIM_COMPLETE_TIME} {sim_time_s}s'
+
+
+@pytest.mark.asyncio
+async def test_timer_async_function(mock_logger, mocker):
+    mocker.patch('asyncio.sleep', side_effect=lambda t: asyncio.sleep(0))
+    timer.init(precision=6)
+
+    @timer.timeit()
+    async def fast_async(x):
+        await asyncio.sleep(0.05)
+        return x * 2
+
+    result = await fast_async(10)
+    assert result == 20
+    assert mock_logger.info.called
+    log_args = mock_logger.info.call_args[0][0]
+    assert 'fast_async' in log_args
+    assert re.search(r'fast_async took\s+([0-9]*\.[0-9]+)\s*\[(ns|μs)]', log_args)

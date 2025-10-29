@@ -1,37 +1,14 @@
-import threading
-import asyncio
-import pytest
-import logging
-import re
-
-from pytest_mock import MockerFixture
-from unittest.mock import Mock, AsyncMock
-from nano_dev_utils import timers, timer
-from nano_dev_utils.timers import Timer
-
-SIM_COMPLETE_TIME = 'Function completed in simulated'
-
-
-@pytest.fixture
-def mock_logger(mocker: MockerFixture) -> Mock:
-    mock_logger = mocker.MagicMock(spec=logging.Logger)
-    timers.lgr = mock_logger
-    return mock_logger
-
-
-@pytest.fixture
-def timer_mock() -> Timer:
-    return timer
-
-
-@pytest.fixture
-def async_sleep_mocker(mocker: MockerFixture) -> AsyncMock:
-    """Mock asyncio.sleep to speed up tests."""
-
-    async def noop_sleep(t):
-        pass
-
-    return mocker.patch('asyncio.sleep', side_effect=noop_sleep)
+from .test_timers_common import (threading,
+                                 pytest,
+                                 re,
+                                 MockerFixture,
+                                 Mock,
+                                 timer,
+                                 Timer,
+                                 timer_mock,
+                                 mock_logger,
+                                 SIM_COMPLETE_TIME
+                                 )
 
 
 def test_initialization(timer_mock) -> None:
@@ -311,9 +288,9 @@ def test_timeout_per_iteration(mocker: MockerFixture) -> None:
         func(sim_time_s)
 
     assert (
-        f'exceeded {cfg_timeout:.{timer.precision}f}s on iteration 1 '
-        f'(took {sim_time_s:.{timer.precision}f}s)'
-    ) in str(exc_info.value)
+               f'exceeded {cfg_timeout:.{timer.precision}f}s on iteration 1 '
+               f'(took {sim_time_s:.{timer.precision}f}s)'
+           ) in str(exc_info.value)
 
 
 def test_timeout_with_fast_function(mock_logger: Mock, mocker: MockerFixture) -> None:
@@ -338,70 +315,6 @@ def test_timeout_with_fast_function(mock_logger: Mock, mocker: MockerFixture) ->
     assert result == f'{SIM_COMPLETE_TIME} {sim_time_s}s'
 
 
-@pytest.mark.asyncio
-async def test_async_function_timing(
-    timer_mock: Timer, async_sleep_mocker: AsyncMock
-) -> None:
-    """Test timing of simple async functions."""
-
-    @timer_mock.timeit()
-    async def async_noop():
-        return 'done'
-
-    result = await async_noop()
-    assert result == 'done'
-
-
-@pytest.mark.asyncio
-async def test_timer_async_function(
-    mock_logger: Mock, mocker: MockerFixture, async_sleep_mocker: AsyncMock
-) -> None:
-    mocker.patch('asyncio.sleep', async_sleep_mocker)
-    timer.init(precision=6)
-
-    @timer.timeit()
-    async def fast_async(x):
-        await asyncio.sleep(0.05)
-        return x * 2
-
-    result = await fast_async(10)
-    assert result == 20
-    assert mock_logger.info.called
-    log_args = mock_logger.info.call_args[0][0]
-    assert 'fast_async' in log_args
-    assert re.search(r'fast_async took\s+([0-9]*\.[0-9]+)\s*\[?(ns|μs)]?', log_args)
-
-
-@pytest.mark.asyncio
-async def test_async_function_with_args(
-    timer_mock: Timer, async_sleep_mocker: AsyncMock
-) -> None:
-    """Test async function with arguments."""
-
-    @timer_mock.timeit()
-    async def async_add(a: int, b: int):
-        return a + b
-
-    result = await async_add(5, 3)
-    assert result == 8
-
-
-@pytest.mark.asyncio
-async def test_async_function_with_delay(
-    timer_mock: Timer, async_sleep_mocker: AsyncMock
-) -> None:
-    """Test async function that would normally have delay."""
-
-    @timer_mock.timeit()
-    async def async_with_sleep():
-        await asyncio.sleep(1)
-        return 'completed'
-
-    result = await async_with_sleep()
-    assert result == 'completed'
-
-
-# Test nanoseconds
 def test_nanoseconds_whole_number(timer_mock: Timer) -> None:
     """Test whole number nanoseconds"""
     assert timer_mock._duration_formatter(150) == '150.00ns'
@@ -507,7 +420,7 @@ def test_hours_only(timer_mock: Timer) -> None:
     ],
 )
 def test_parameterized(
-    timer_mock: Timer, ns_input: float, expected_output: str, precision: int
+        timer_mock: Timer, ns_input: float, expected_output: str, precision: int
 ) -> None:
     """Parameterized test covering all major cases"""
     result = timer_mock._duration_formatter(ns_input, precision)
@@ -528,7 +441,7 @@ def test_comprehensive_hour_decomposition(timer_mock: Timer) -> None:
 
 
 def test_format_duration_in_decorator_context(
-    timer_mock: Timer, mock_logger: Mock
+        timer_mock: Timer, mock_logger: Mock
 ) -> None:
     """Test that format_duration works in a decorator-like context"""
     test_cases = [

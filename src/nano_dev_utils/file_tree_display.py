@@ -46,6 +46,9 @@ class FileTreeDisplay:
         self.save2file = save2file
         self.printout = printout
 
+    def init(self, *args, **kwargs) -> None:
+        self.__init__(*args, **kwargs)
+
     def update(self, attrs: dict) -> None:
         self.__dict__.update(attrs)
 

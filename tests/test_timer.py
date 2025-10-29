@@ -12,7 +12,7 @@ SIM_COMPLETE_TIME = 'Function completed in simulated'
 
 
 @pytest.fixture
-def mock_logger(mocker):
+def mock_logger(mocker: MockerFixture) -> Mock:
     mock_logger = mocker.MagicMock(spec=logging.Logger)
     timers.lgr = mock_logger
     return mock_logger

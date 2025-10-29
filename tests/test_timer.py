@@ -318,7 +318,6 @@ def test_timeout_with_fast_function(mock_logger: Mock, mocker: MockerFixture) ->
     assert result == f'{SIM_COMPLETE_TIME} {sim_time_s}s'
 
 
-# @pytest.mark.skip(reason='Pyright errors')  # test passes, pyright fails
 @pytest.mark.asyncio
 async def test_timer_async_function(mock_logger, mocker):
     mocker.patch('asyncio.sleep', side_effect=lambda t: asyncio.sleep(0))

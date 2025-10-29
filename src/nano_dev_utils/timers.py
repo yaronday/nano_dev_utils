@@ -3,7 +3,14 @@ import time
 import logging
 import inspect
 
-from typing import Callable, ParamSpec, TypeVar, Awaitable
+from typing import (
+    TypeVar,
+    ParamSpec,
+    Callable,
+    Awaitable,
+    Any,
+    cast,
+)
 
 from nano_dev_utils.common import update
 
@@ -31,24 +38,25 @@ class Timer:
         iterations: int = 1,
         timeout: float | None = None,
         per_iteration: bool = False,
-    ) -> Callable[
-        [Callable[P, R] | Callable[P, Awaitable[R]]],
-        Callable[P, R] | Callable[P, Awaitable[R]],
-    ]:
+    ) -> Callable[[Callable[P, Any]], Callable[P, Any]]:
         """Decorator that times sync or async function execution with optional timeout."""
 
+        RP = ParamSpec('RP')
+        RR = TypeVar('RR')
+
         def decorator(
-            func: Callable[P, R] | Callable[P, Awaitable[R]],
-        ) -> Callable[P, R] | Callable[P, Awaitable[R]]:
+            func: Callable[RP, RR] | Callable[RP, Awaitable[RR]],
+        ) -> Callable[RP, Any]:
             if inspect.iscoroutinefunction(func):
+                async_func = cast(Callable[RP, Awaitable[RR]], func)
 
                 @wraps(func)
-                async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                async def async_wrapper(*args: RP.args, **kwargs: RP.kwargs) -> RR:
                     total_elapsed_ns = 0
-                    result: R | None = None
+                    result: RR | None = None
                     for i in range(1, iterations + 1):
                         start_ns = time.perf_counter_ns()
-                        result = await func(*args, **kwargs)  # await async function!
+                        result = await async_func(*args, **kwargs)
                         duration_ns = time.perf_counter_ns() - start_ns
                         total_elapsed_ns += duration_ns
                         self._check_timeout(
@@ -65,22 +73,21 @@ class Timer:
                         func.__name__, args, kwargs, value, unit, iterations
                     )
                     lgr.info(msg)
-                    return result
+                    return cast(RR, result)
 
-                return async_wrapper
+                return cast(Callable[RP, Awaitable[RR]], async_wrapper)
             else:
+                sync_func = cast(Callable[RP, RR], func)
 
                 @wraps(func)
-                def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                def sync_wrapper(*args: RP.args, **kwargs: RP.kwargs) -> RR:
                     total_elapsed_ns = 0
-                    result: R = None
-
+                    result: RR | None = None
                     for i in range(1, iterations + 1):
                         start_ns = time.perf_counter_ns()
-                        result = func(*args, **kwargs)
+                        result = sync_func(*args, **kwargs)
                         duration_ns = time.perf_counter_ns() - start_ns
                         total_elapsed_ns += duration_ns
-
                         self._check_timeout(
                             func.__name__,
                             i,
@@ -89,16 +96,15 @@ class Timer:
                             timeout,
                             per_iteration,
                         )
-
                     avg_elapsed_ns = total_elapsed_ns / iterations
                     value, unit = self._to_units(avg_elapsed_ns)
                     msg = self._formatted_msg(
                         func.__name__, args, kwargs, value, unit, iterations
                     )
                     lgr.info(msg)
-                    return result
+                    return cast(RR, result)
 
-                return sync_wrapper
+                return cast(Callable[RP, RR], sync_wrapper)
 
         return decorator
 

@@ -53,9 +53,7 @@ def test_timeit_no_args_kwargs(mock_logger: Mock, mocker: MockerFixture) -> None
     result = yet_another_function()
     assert result == 'yet another result'
     mock_time.assert_any_call()
-    mock_logger.info.assert_called_once_with(
-        'yet_another_function () {} took 0.50ns'
-    )
+    mock_logger.info.assert_called_once_with('yet_another_function () {} took 0.50ns')
 
 
 def test_multithreaded_timing(mock_logger: Mock, mocker: MockerFixture) -> None:
@@ -112,7 +110,6 @@ def test_verbose_mode(mock_logger: Mock, mocker: MockerFixture) -> None:
     assert res == 7  # checking returned value preservation
 
 
-# todo fix unit str (no brackets)
 def test_nested_timers(mock_logger: Mock, mocker: MockerFixture) -> None:
     """Test that nested timers work correctly"""
     outer_start = 1000
@@ -147,7 +144,7 @@ def test_nested_timers(mock_logger: Mock, mocker: MockerFixture) -> None:
     def extract_duration(output: str) -> float:
         match = re.search(r'took\s+([0-9]*\.?[0-9]+)', output)
         if not match:
-            raise ValueError(f"Could not parse duration from output: {output}")
+            raise ValueError(f'Could not parse duration from output: {output}')
         return float(match.group(1))
 
     inner_duration = extract_duration(inner_output)
@@ -325,7 +322,6 @@ def test_timeout_with_fast_function(mock_logger: Mock, mocker: MockerFixture) ->
     assert result == f'{SIM_COMPLETE_TIME} {sim_time_s}s'
 
 
-# todo fix unit str (no brackets)
 @pytest.mark.asyncio
 async def test_timer_async_function(mock_logger: Mock, mocker: MockerFixture) -> None:
     async def noop_sleep(t):

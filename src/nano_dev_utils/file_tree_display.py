@@ -2,17 +2,8 @@ import os
 from collections.abc import Generator
 from pathlib import Path
 import fnmatch
-from .ftd_consts import (
-    TITLE,
-    DEFAULT_SFX,
-    TREE_SAVED,
-    NOT_A_DIR,
-    PERMISSION_DENIED,
-    READ_ERR,
-    WR_PERMISSION_DENIED,
-    FILE_WR_ERR,
-    t_msg,
-)
+
+DEFAULT_SFX = '_filetree.txt'
 
 
 class FileTreeDisplay:
@@ -25,59 +16,70 @@ class FileTreeDisplay:
 
     def __init__(
         self,
-        root_dir: str,
+        root_dir: str | None = None,
         filepath: str | None = None,
         ignore_dirs: list[str] | set[str] | None = None,
         ignore_files: list[str] | set[str] | None = None,
-        style: str = '-',
+        style: str = "-",
         indent: int = 1,
-        title: str = TITLE,
-        default_suffix: str = DEFAULT_SFX,
+        save2file: bool = True,
+        printout: bool = False,
     ) -> None:
         """Initialize the FileTreeDisplay instance.
 
         Args:
             root_dir (str): Root directory to traverse.
+            filepath: str | None: full output file path.
             ignore_dirs (list[str] | set[str] | None): Directory names or patterns to ignore.
             ignore_files (list[str] | set[str] | None): File names or patterns to ignore.
             style (str): Character(s) used to represent hierarchy levels. Defaults to "-".
             indent (int): Number of style characters used per hierarchy level. Defaults to 2.
+            save2file (bool): save file tree info to a file.
+            printout (bool): print file tree info
         """
-        self.root_dir = root_dir
+        self.root_path = Path(root_dir) if root_dir else Path.cwd()
         self.filepath = filepath
         self.ignore_dirs = set(ignore_dirs or [])
         self.ignore_files = set(ignore_files or [])
         self.style = style
         self.indent = indent
-        self.title = title
-        self.default_suffix = default_suffix
+        self.save2file = save2file
+        self.printout = printout
 
-    def file_tree_display(self, save2file: bool = True) -> str | None:
+    def update(self, attrs: dict) -> None:
+        self.__dict__.update(attrs)
+
+    def file_tree_display(self) -> str:
         """Generate and save the directory tree to a text file.
 
         Returns:
-            str: Path to the saved output file containing the directory tree.
+            Either a str: Path to the saved output file containing the directory tree.
+            or the whole built tree, as a string of CRLF-separated lines.
         """
-        root_path = Path(self.root_dir)
-        if not root_path.is_dir():
-            raise NotADirectoryError(t_msg(NOT_A_DIR, path=self.root_dir))
+        root_path_str = str(self.root_path)
+        if not self.root_path.is_dir():
+            raise NotADirectoryError(f"The path '{root_path_str}' is not a directory.")
 
-        root_path_str = f'{root_path.name}/'
-        header = [self.title, root_path_str] if self.title else [root_path_str]
+        iterator = self.build_tree(root_path_str, "")
 
-        iterator = self.build_tree(str(root_path), '')
+        tree_info = self.get_tree_info(iterator)
 
-        if save2file:
-            file_path = self.save2file(header, iterator, self.filepath)
-            print(t_msg(TREE_SAVED, filepath=file_path))
-            return file_path
-        else:
-            print('\n'.join(header))
-            for line in iterator:
-                print(line)
+        if self.save2file:
+            return self.buffer2file(tree_info)
+
+        if self.printout:
+            print(tree_info)
+
+        return tree_info
+
+    def get_tree_info(self, iterator: Generator[str, None, None]) -> str:
+        lines = [f'{self.root_path.name}/']
+        lines.extend(list(iterator))
+        return '\n'.join(lines)
 
     def build_tree(self, dir_path: str, prefix: str = '') -> Generator[str, None, None]:
         """Recursively yield formatted directory tree lines.
+        Intended order of appearance is with a preference to subdirectories first.
 
         Args:
             dir_path (str): The directory path currently being traversed.
@@ -97,10 +99,10 @@ class FileTreeDisplay:
                     elif not self.should_ignore(entry.name, False):
                         files.append(entry)
         except PermissionError:
-            yield f'{prefix}{self.style * self.indent}{PERMISSION_DENIED}'
+            yield f'{prefix}{self.style * self.indent}[Permission Denied]'
             return
         except OSError:
-            yield f'{prefix}{self.style * self.indent}{READ_ERR}'
+            yield f'{prefix}{self.style * self.indent}[Error reading directory]'
             return
 
         dirs.sort(key=lambda e: e.name)
@@ -128,40 +130,29 @@ class FileTreeDisplay:
             return True
         return any(fnmatch.fnmatch(name, pattern) for pattern in ignore_set)
 
-    def save2file(
-        self,
-        header: list[str],
-        iterator: Generator[str, None, None],
-        filepath: str | None = None,
-    ) -> str:
-        """Save the formatted file tree to a text file.
+    def buffer2file(self, buffer: str) -> str:
+        """Save the formatted file directly from a string buffer.
 
         Args:
-            header (list[str]): Header lines to write at the beginning of the file.
-            iterator (Generator[str, None, None]): The yielded directory/file tree lines.
-            filepath (str | None): Optional output file path. Defaults to
-                "<root_dir>/<root_name>_file_tree.txt".
+            buffer (str): a string of CRLF-separated lines.
 
         Returns:
             str: Path to the saved output file.
         """
-        root_path = Path(self.root_dir)
-        out_file = (
-            Path(filepath)
-            if filepath
-            else root_path / f'{root_path.name}{self.default_suffix}'
-        )
-
+        out_file = self.format_out_path()
         try:
-            with out_file.open('w', encoding='utf-8') as f:
-                f.write('\n'.join(header) + '\n')
-                for line in iterator:
-                    f.write(line + '\n')
+            with out_file.open("w", encoding="utf-8") as f:
+                f.write(buffer)
+
         except PermissionError as e:
-            raise PermissionError(
-                t_msg(WR_PERMISSION_DENIED, filepath=out_file, error=e)
-            )
+            raise PermissionError(f"Cannot write to '{out_file}': {e}")
         except OSError as e:
-            raise OSError(t_msg(FILE_WR_ERR, filepath=out_file, error=e))
+            raise OSError(f"Error writing file '{out_file}': {e}")
 
         return str(out_file)
+
+    def format_out_path(self) -> Path:
+        alt_file_name = f'{self.root_path.name}{DEFAULT_SFX}'
+        out_file = Path(self.filepath) if self.filepath \
+            else (self.root_path / alt_file_name)
+        return out_file

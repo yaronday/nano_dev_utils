@@ -58,6 +58,7 @@ class Timer:
         def decorator(
             func: Callable[RP, RR] | Callable[RP, Awaitable[RR]],
         ) -> Callable[RP, Any]:
+            verbose = self.verbose
             if inspect.iscoroutinefunction(func):
                 async_func = cast(Callable[RP, Awaitable[RR]], func)
 
@@ -82,8 +83,9 @@ class Timer:
                         )
                     avg_elapsed_ns = total_elapsed_ns / iterations
                     duration_str = self._duration_formatter(avg_elapsed_ns, precision)
+
                     msg = self._formatted_msg(
-                        func_name, args, kwargs, duration_str, iterations
+                        func_name, args, kwargs, duration_str, iterations, verbose
                     )
                     lgr.info(msg)
                     return cast(RR, result)
@@ -113,7 +115,7 @@ class Timer:
                     avg_elapsed_ns = total_elapsed_ns / iterations
                     duration_str = self._duration_formatter(avg_elapsed_ns, precision)
                     msg = self._formatted_msg(
-                        func_name, args, kwargs, duration_str, iterations
+                        func_name, args, kwargs, duration_str, iterations, verbose
                     )
                     lgr.info(msg)
                     return cast(RR, result)
@@ -186,14 +188,15 @@ class Timer:
             seconds = int((elapsed_ns % ns_min) / ns_sec)
             return f'{minutes} [m] {seconds} [s]' if seconds else f'{minutes} [m]'
 
+    @staticmethod
     def _formatted_msg(
-        self,
         func_name: str,
         args: tuple,
         kwargs: dict,
         duration_str: str,
         iterations: int,
+        verbose: bool,
     ) -> str:
-        extra_info = f'{args} {kwargs} ' if self.verbose else ''
+        extra_info = f'{args} {kwargs} ' if verbose else ''
         iter_info = f' (avg. over {iterations} runs)' if iterations > 1 else ''
         return f'{func_name} {extra_info}took {duration_str}{iter_info}'

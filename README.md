@@ -87,9 +87,7 @@ This module provides an `Importer` class for lazy loading and caching module imp
 #### Example Usage:
 
 ```python
-from nano_dev_utils.dynamic_importer import Importer
-
-importer = Importer()
+from nano_dev_utils import importer
 
 os_path = importer.import_mod_from_lib("os", "path")
 print(f"Imported os.path: {os_path}")
@@ -134,7 +132,8 @@ It supports Windows, Linux, and macOS.
 
 ```python
 import logging
-from nano_dev_utils import PortsRelease
+from nano_dev_utils import ports_release, PortsRelease
+
 
 # For configuration of logging level and format (supported already):  
 logging.basicConfig(filename='port release.log',
@@ -142,16 +141,15 @@ logging.basicConfig(filename='port release.log',
                     format='%(asctime)s - %(levelname)s: %(message)s',
                     datefmt='%d-%m-%Y %H:%M:%S')
 
-# Create an instance with default ports
-port_releaser = PortsRelease()
-port_releaser.release_all()
+
+ports_release.release_all()
 
 # Create an instance with custom ports
 custom_ports_releaser = PortsRelease(default_ports=[8080, 9000, 6274])
 custom_ports_releaser.release_all(ports=[8080, 9000])
 
 # Release only the default ports
-port_releaser.release_all()
+ports_release.release_all()
 ```
 
 ## License

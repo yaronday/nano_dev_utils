@@ -2,11 +2,15 @@
 Copyright (c) 2025 Yaron Dayan
 """
 
+from importlib.metadata import version
 from .dynamic_importer import Importer
 from .timers import Timer
 from .release_ports import PortsRelease, PROXY_SERVER, INSPECTOR_CLIENT
-from .file_tree_display import FileTreeDisplay
-from importlib.metadata import version
+from .common import update
+
+timer = Timer()
+ports_release = PortsRelease()
+importer = Importer()
 
 __version__ = version('nano-dev-utils')
 
@@ -16,5 +20,8 @@ __all__ = [
     'PortsRelease',
     'PROXY_SERVER',
     'INSPECTOR_CLIENT',
-    'FileTreeDisplay',
+    'update',
+    'timer',
+    'ports_release',
+    'importer',
 ]

@@ -2,11 +2,15 @@ from types import ModuleType
 from typing import Any
 
 import importlib
+from nano_dev_utils.common import update
 
 
 class Importer:
     def __init__(self):
         self.imported_modules = {}
+
+    def update(self, attrs: dict) -> None:
+        update(self, attrs)
 
     def import_mod_from_lib(self, library: str, module_name: str) -> ModuleType | Any:
         """Lazily imports and caches a specific submodule from a given library.

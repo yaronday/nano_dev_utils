@@ -14,13 +14,13 @@ This module provides a `Timer` class for measuring the execution time of code bl
     * `precision`: The number of decimal places to record and display time durations. Defaults to 4.
     * `verbose`: Optionally displays the function's positional arguments (args) and keyword arguments (kwargs). Defaults to `False`.
 
-* **`timeit(
+* **`def timeit(
         self,
         iterations: int = 1,
         timeout: float | None = None,
-        per_iteration: bool = False
-    ) -> Callable[[Callable[P, R]], Callable[P, R | None]]`**:   
-      Decorator that times function execution with advanced features:
+        per_iteration: bool = False,
+    ) -> Callable[[Callable[P, Any]], Callable[P, Any]]:`**:   
+      Decorator that times either **sync** or **async** function execution with advanced features:
     * `iterations`: Number of times to run the function (for averaging). Defaults to 1.
     * `timeout`: Maximum allowed execution time in seconds. When exceeded:
         * Raises `TimeoutError` immediately
@@ -38,9 +38,7 @@ This module provides a `Timer` class for measuring the execution time of code bl
 
 ```python
 import time
-from nano_dev_utils.timers import Timer
-
-timer = Timer(precision=6, verbose=True)
+from nano_dev_utils import timer
 
 # Basic timing
 @timer.timeit()
@@ -48,6 +46,18 @@ def my_function(a, b=10):
     """A sample function."""
     time.sleep(0.1)
     return a + b
+
+timer.init(precision=6, verbose=True)
+'''
+Alternatively we could have used the `update` method as well: 
+
+timer.update({'precision': 6, 'verbose': True})  
+
+The above config could be also achieved via explicit instantiation:
+
+from nano_dev_utils.timers import Timer
+timer = Timer(precision=6, verbose=True)
+'''
 
 # Advanced usage with timeout and iterations
 @timer.timeit(iterations=5, timeout=0.5, per_iteration=True)
@@ -77,9 +87,7 @@ This module provides an `Importer` class for lazy loading and caching module imp
 #### Example Usage:
 
 ```python
-from nano_dev_utils.dynamic_importer import Importer
-
-importer = Importer()
+from nano_dev_utils import importer
 
 os_path = importer.import_mod_from_lib("os", "path")
 print(f"Imported os.path: {os_path}")
@@ -124,7 +132,8 @@ It supports Windows, Linux, and macOS.
 
 ```python
 import logging
-from nano_dev_utils import PortsRelease
+from nano_dev_utils import ports_release, PortsRelease
+
 
 # For configuration of logging level and format (supported already):  
 logging.basicConfig(filename='port release.log',
@@ -132,16 +141,15 @@ logging.basicConfig(filename='port release.log',
                     format='%(asctime)s - %(levelname)s: %(message)s',
                     datefmt='%d-%m-%Y %H:%M:%S')
 
-# Create an instance with default ports
-port_releaser = PortsRelease()
-port_releaser.release_all()
+
+ports_release.release_all()
 
 # Create an instance with custom ports
 custom_ports_releaser = PortsRelease(default_ports=[8080, 9000, 6274])
 custom_ports_releaser.release_all(ports=[8080, 9000])
 
 # Release only the default ports
-port_releaser.release_all()
+ports_release.release_all()
 ```
 
 ### `file_tree_display.py`

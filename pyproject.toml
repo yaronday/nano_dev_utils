@@ -1,6 +1,6 @@
 [project]
 name = "nano_dev_utils"
-version = "1.2.0"
+version = "1.1.2"
 
 authors = [
   { name="Yaron Dayan", email="yaronday77@gmail.com" },
@@ -21,6 +21,7 @@ license = { path = "LICENSE" }
 test = [
     "pytest>=8.2.0",
     "pytest-mock>=3.14.0",
+    "pytest-asyncio>=1.2.0"
 ]
 
 [project.urls]

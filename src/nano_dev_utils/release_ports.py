@@ -63,6 +63,9 @@ class PortsRelease:
     def _log_unsupported_os() -> str:
         return f'Unsupported OS: {platform.system()}'
 
+    def init(self, *args, **kwargs) -> None:
+        self.__init__(*args, **kwargs)
+
     def update(self, attrs: dict) -> None:
         update(self, attrs)
 

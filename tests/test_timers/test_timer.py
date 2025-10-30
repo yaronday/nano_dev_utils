@@ -20,7 +20,9 @@ def test_initialization(timer_mock) -> None:
     assert timer_mock.verbose
 
 
-def test_timeit_simple(timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture) -> None:
+def test_timeit_simple(
+    timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, int(923_470)])
 
     timer_mock.init(precision=2)
@@ -35,7 +37,9 @@ def test_timeit_simple(timer_mock: Timer, mock_logger: Mock, mocker: MockerFixtu
     mock_logger.info.assert_called_once_with('sample_function took 923.47μs')
 
 
-def test_timeit_no_args_kwargs(timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture) -> None:
+def test_timeit_no_args_kwargs(
+    timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     mock_time = mocker.patch('time.perf_counter_ns', side_effect=[1.0, 1.5])
     timer_mock.init(precision=2, verbose=True)
 
@@ -49,7 +53,9 @@ def test_timeit_no_args_kwargs(timer_mock: Timer, mock_logger: Mock, mocker: Moc
     mock_logger.info.assert_called_once_with('yet_another_function () {} took 0.50ns')
 
 
-def test_multithreaded_timing(timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture) -> None:
+def test_multithreaded_timing(
+    timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     """Test timer_mock works correctly across threads"""
     sim_time_us = 1  # μs
     sim_time_ns = sim_time_us * 1e3
@@ -83,7 +89,9 @@ def test_multithreaded_timing(timer_mock: Timer, mock_logger: Mock, mocker: Mock
         assert f'took {sim_time_us:.{timer_mock.precision}f}μs' in call_args[0][0]
 
 
-def test_verbose_mode(timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture) -> None:
+def test_verbose_mode(
+    timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     """Test that verbose mode includes positional and
     keyword arguments in output and preserves the wrapped func result"""
     mocker.patch('time.perf_counter_ns', side_effect=[1e4, 5.23456e4])
@@ -103,7 +111,9 @@ def test_verbose_mode(timer_mock: Timer, mock_logger: Mock, mocker: MockerFixtur
     assert res == 7  # checking returned value preservation
 
 
-def test_nested_timers(timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture) -> None:
+def test_nested_timers(
+    timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     """Test that nested timers work correctly"""
     outer_start = 1000
     inner_start = 1100
@@ -148,7 +158,9 @@ def test_nested_timers(timer_mock: Timer, mock_logger: Mock, mocker: MockerFixtu
     assert outer_duration > inner_duration
 
 
-def test_unit_scaling(timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture) -> None:
+def test_unit_scaling(
+    timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     """Test the time unit selection logic directly"""
     boundary_cases = [
         (1e3 - 1, 'ns'),
@@ -188,7 +200,9 @@ def test_function_metadata_preserved(timer_mock: Timer) -> None:
     assert dummy_func.__doc__ == 'Test docstring'
 
 
-def test_timeit_with_iterations(timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture) -> None:
+def test_timeit_with_iterations(
+    timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     k = 3
     sim_times_ns = [0, 1e3, 0, 2e3, 0, 3e3]
     mock_time = mocker.patch(
@@ -293,7 +307,9 @@ def test_timeout_per_iteration(timer_mock: Timer, mocker: MockerFixture) -> None
     ) in str(exc_info.value)
 
 
-def test_timeout_with_fast_function(timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture) -> None:
+def test_timeout_with_fast_function(
+    timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture
+) -> None:
     sim_time_ms = 50.1
     sim_time_s = sim_time_ms / 1e3
 

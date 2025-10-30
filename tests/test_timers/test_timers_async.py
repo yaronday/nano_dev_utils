@@ -8,16 +8,6 @@ from unittest.mock import Mock, AsyncMock
 from nano_dev_utils.timers import Timer
 
 
-@pytest.fixture
-def async_sleep_mocker(mocker: MockerFixture) -> AsyncMock:
-    """Mock asyncio.sleep to speed up tests."""
-
-    async def noop_sleep(t):
-        pass
-
-    return mocker.patch('asyncio.sleep', side_effect=noop_sleep)
-
-
 @pytest.mark.asyncio
 async def test_async_function_timing(
     timer_mock: Timer, async_sleep_mocker: AsyncMock

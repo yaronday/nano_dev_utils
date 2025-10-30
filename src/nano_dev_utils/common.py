@@ -1,3 +1,7 @@
+from pathlib import Path
+from typing import AnyStr
+
+
 def update(obj: object, attrs: dict) -> None:
     """Updates an object's attributes from a dictionary.
     Uses direct __dict__ modification if possible for performance,
@@ -45,3 +49,27 @@ def encode_dict(input_dict: dict) -> bytes:
     if not isinstance(input_dict, dict):
         raise TypeError('input_dict must be a dictionary.')
     return b' '.join(str(v).encode() for v in input_dict.values())
+
+
+def str2file(content: AnyStr, filepath: str, mode: str = 'w', enc: str = 'utf-8') -> None:
+    """Simply save file directly from any string content.
+
+    Args:
+        content (AnyStr): String or bytes to write. Must match the mode type ,e.g. bytes for binary.
+        filepath (str): Full file path to write to.
+        mode (str): see doc for Path.open. Defaults to 'w'.
+        enc (str): Encoding used in text modes; ignored in binary modes. Defaults to 'utf-8'.
+    """
+    out_file_path = Path(filepath)
+    try:
+        if 'b' in mode:
+            with out_file_path.open(mode) as f:
+                f.write(content)
+        else:
+            with out_file_path.open(mode, encoding=enc) as f:
+                f.write(content)
+
+    except PermissionError as e:
+        raise PermissionError(f"Cannot write to '{out_file_path}': {e}")
+    except OSError as e:
+        raise OSError(f"Error writing file '{out_file_path}': {e}")

@@ -1,11 +1,7 @@
 import pytest
 from unittest.mock import Mock
 
-from .test_timers_common import (
-    timer_mock,  # noqa: F401
-    mock_logger,  # noqa: F401
-    Timer,  # noqa: F401
-)
+from nano_dev_utils.timers import Timer
 
 
 def test_nanoseconds_whole_number(timer_mock: Timer) -> None:

@@ -4,12 +4,9 @@ import re
 
 from pytest_mock import MockerFixture
 from unittest.mock import Mock, AsyncMock
-from .test_timers_common import (
-    timer,
-    Timer,
-    timer_mock,  # noqa: F401
-    mock_logger,  # noqa: F401
-)
+
+from nano_dev_utils import timer
+from nano_dev_utils.timers import Timer
 
 
 @pytest.fixture

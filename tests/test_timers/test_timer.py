@@ -5,12 +5,9 @@ import re
 from pytest_mock import MockerFixture
 from unittest.mock import Mock
 
-from .test_timers_common import (
-    timer,
-    timer_mock,  # noqa: F401
-    mock_logger,  # noqa: F401
-    SIM_COMPLETE_TIME,
-)
+from nano_dev_utils import timer
+
+SIM_COMPLETE_TIME = 'Function completed in simulated'
 
 
 def test_initialization(timer_mock) -> None:

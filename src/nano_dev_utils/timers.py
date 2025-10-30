@@ -14,6 +14,7 @@ from typing import (
 
 from nano_dev_utils.common import update
 
+
 lgr = logging.getLogger(__name__)
 """Module-level logger. Configure using logging.basicConfig() in your application."""
 
@@ -25,12 +26,11 @@ class Timer:
     def __init__(self, precision: int = 4, verbose: bool = False):
         self.precision = precision
         self.verbose = verbose
-        self.units = [(1e9, 's'), (1e6, 'ms'), (1e3, 'μs'), (1.0, 'ns')]
 
     def init(self, *args, **kwargs) -> None:
         self.__init__(*args, **kwargs)
 
-    def update(self, attrs: dict) -> None:
+    def update(self, attrs: dict[str, Any]) -> None:
         update(self, attrs)
 
     def timeit(
@@ -39,19 +39,32 @@ class Timer:
         timeout: float | None = None,
         per_iteration: bool = False,
     ) -> Callable[[Callable[P, Any]], Callable[P, Any]]:
-        """Decorator that times sync or async function execution with optional timeout."""
+        """Decorator that measures execution time for sync / async functions.
+
+        Args:
+            iterations: Number of times to run the function (averaged for reporting).
+            timeout: Optional max allowed time (in seconds); raises TimeoutError if exceeded.
+            per_iteration: If True, enforces timeout per iteration, else cumulatively.
+
+        Returns:
+        A decorated function that behaves identically to the original, with timing logged.
+        """
 
         RP = ParamSpec('RP')
         RR = TypeVar('RR')
 
+        precision = self.precision
+
         def decorator(
             func: Callable[RP, RR] | Callable[RP, Awaitable[RR]],
         ) -> Callable[RP, Any]:
+            verbose = self.verbose
             if inspect.iscoroutinefunction(func):
                 async_func = cast(Callable[RP, Awaitable[RR]], func)
 
                 @wraps(func)
                 async def async_wrapper(*args: RP.args, **kwargs: RP.kwargs) -> RR:
+                    func_name = func.__name__
                     total_elapsed_ns = 0
                     result: RR | None = None
                     for i in range(1, iterations + 1):
@@ -59,8 +72,9 @@ class Timer:
                         result = await async_func(*args, **kwargs)
                         duration_ns = time.perf_counter_ns() - start_ns
                         total_elapsed_ns += duration_ns
+
                         self._check_timeout(
-                            func.__name__,
+                            func_name,
                             i,
                             duration_ns,
                             total_elapsed_ns,
@@ -68,9 +82,10 @@ class Timer:
                             per_iteration,
                         )
                     avg_elapsed_ns = total_elapsed_ns / iterations
-                    value, unit = self._to_units(avg_elapsed_ns)
+                    duration_str = self._duration_formatter(avg_elapsed_ns, precision)
+
                     msg = self._formatted_msg(
-                        func.__name__, args, kwargs, value, unit, iterations
+                        func_name, args, kwargs, duration_str, iterations, verbose
                     )
                     lgr.info(msg)
                     return cast(RR, result)
@@ -81,6 +96,7 @@ class Timer:
 
                 @wraps(func)
                 def sync_wrapper(*args: RP.args, **kwargs: RP.kwargs) -> RR:
+                    func_name = func.__name__
                     total_elapsed_ns = 0
                     result: RR | None = None
                     for i in range(1, iterations + 1):
@@ -89,7 +105,7 @@ class Timer:
                         duration_ns = time.perf_counter_ns() - start_ns
                         total_elapsed_ns += duration_ns
                         self._check_timeout(
-                            func.__name__,
+                            func_name,
                             i,
                             duration_ns,
                             total_elapsed_ns,
@@ -97,9 +113,9 @@ class Timer:
                             per_iteration,
                         )
                     avg_elapsed_ns = total_elapsed_ns / iterations
-                    value, unit = self._to_units(avg_elapsed_ns)
+                    duration_str = self._duration_formatter(avg_elapsed_ns, precision)
                     msg = self._formatted_msg(
-                        func.__name__, args, kwargs, value, unit, iterations
+                        func_name, args, kwargs, duration_str, iterations, verbose
                     )
                     lgr.info(msg)
                     return cast(RR, result)
@@ -120,38 +136,67 @@ class Timer:
         """Raise TimeoutError if timeout is exceeded."""
         if timeout is None:
             return
+        precision = self.precision
+        timeout_exceeded = f'{func_name} exceeded {timeout:.{precision}f}s'
         if per_iteration:
             duration_s = duration_ns / 1e9
             if duration_s > timeout:
                 raise TimeoutError(
-                    f'{func_name} exceeded {timeout:.{self.precision}f}s on '
-                    f'iteration {i} (took {duration_s:.{self.precision}f}s)'
+                    f'{timeout_exceeded} on iteration {i} '
+                    f'(took {duration_s:.{precision}f}s)'
                 )
         else:
             total_duration_s = total_elapsed_ns / 1e9
             if total_duration_s > timeout:
                 raise TimeoutError(
-                    f'{func_name} exceeded {timeout:.{self.precision}f}s '
-                    f'after {i} iterations (took {total_duration_s:.{self.precision}f}s)'
+                    f'{timeout_exceeded} after {i} iterations '
+                    f'(took {total_duration_s:.{precision}f}s)'
                 )
 
-    def _to_units(self, avg_elapsed_ns: float) -> tuple[float, str]:
-        """Convert nanoseconds to the appropriate time unit."""
-        return next(
-            (avg_elapsed_ns / div, u)
-            for div, u in self.units
-            if avg_elapsed_ns >= div or u == 'ns'
-        )
+    @staticmethod
+    def _duration_formatter(elapsed_ns: float, precision: int = 4) -> str:
+        """Convert nanoseconds to the appropriate time unit, supporting multi-unit results."""
+        ns_sec, ns_min, ns_hour = 1e9, 6e10, 3.6e12
+        ns_ms, ns_us = 1e6, 1e3
 
+        if elapsed_ns < ns_sec:
+            if elapsed_ns >= ns_ms:
+                return f'{elapsed_ns / ns_ms:.{precision}f}ms'
+            elif elapsed_ns >= ns_us:
+                return f'{elapsed_ns / ns_us:.{precision}f}μs'
+            return f'{elapsed_ns:.2f}ns'
+
+        if elapsed_ns < ns_min:
+            seconds = elapsed_ns / ns_sec
+            return f'{seconds:.1f}s' if seconds < 10 else f'{seconds:.0f}s'
+
+        if elapsed_ns >= ns_hour:
+            hours = int(elapsed_ns / ns_hour)
+            rem = elapsed_ns % ns_hour
+            mins = int(rem / ns_min)
+            secs = int((rem % ns_min) / ns_sec)
+
+            parts = [f'{hours}h']
+            if mins:
+                parts.append(f'{mins}m')
+            if secs:
+                parts.append(f'{secs}s')
+            return ' '.join(parts)
+
+        else:
+            minutes = int(elapsed_ns / ns_min)
+            seconds = int((elapsed_ns % ns_min) / ns_sec)
+            return f'{minutes}m {seconds}s' if seconds else f'{minutes}m'
+
+    @staticmethod
     def _formatted_msg(
-        self,
         func_name: str,
         args: tuple,
         kwargs: dict,
-        value: float,
-        unit: str,
+        duration_str: str,
         iterations: int,
+        verbose: bool,
     ) -> str:
-        extra_info = f'{args} {kwargs} ' if self.verbose else ''
+        extra_info = f'{args} {kwargs} ' if verbose else ''
         iter_info = f' (avg. over {iterations} runs)' if iterations > 1 else ''
-        return f'{func_name} {extra_info}took {value:.{self.precision}f} [{unit}]{iter_info}'
+        return f'{func_name} {extra_info}took {duration_str}{iter_info}'

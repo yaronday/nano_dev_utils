@@ -1,7 +1,5 @@
-import threading
 import pytest
 import logging
-import re
 
 from pytest_mock import MockerFixture
 from unittest.mock import Mock

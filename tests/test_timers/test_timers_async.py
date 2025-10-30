@@ -1,14 +1,15 @@
+import pytest
 import asyncio
+import re
 
-from unittest.mock import AsyncMock
-from test_timers_common import (pytest,
-                                re,
-                                MockerFixture,
-                                Mock,
-                                timer,
-                                Timer,
-                                timer_mock,
-                                mock_logger)
+from pytest_mock import MockerFixture
+from unittest.mock import Mock, AsyncMock
+from .test_timers_common import (
+    timer,
+    Timer,
+    timer_mock,  # noqa: F401
+    mock_logger,  # noqa: F401
+)
 
 
 @pytest.fixture

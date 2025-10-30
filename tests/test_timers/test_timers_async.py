@@ -5,7 +5,6 @@ import re
 from pytest_mock import MockerFixture
 from unittest.mock import Mock, AsyncMock
 
-from nano_dev_utils import timer
 from nano_dev_utils.timers import Timer
 
 
@@ -35,12 +34,15 @@ async def test_async_function_timing(
 
 @pytest.mark.asyncio
 async def test_timer_async_function(
-    mock_logger: Mock, mocker: MockerFixture, async_sleep_mocker: AsyncMock
+    timer_mock: Timer,
+    mock_logger: Mock,
+    mocker: MockerFixture,
+    async_sleep_mocker: AsyncMock,
 ) -> None:
     mocker.patch('asyncio.sleep', async_sleep_mocker)
-    timer.init(precision=6)
+    timer_mock.init(precision=6)
 
-    @timer.timeit()
+    @timer_mock.timeit()
     async def fast_async(x):
         await asyncio.sleep(0.05)
         return x * 2

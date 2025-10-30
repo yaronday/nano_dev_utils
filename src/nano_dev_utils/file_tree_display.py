@@ -1,6 +1,9 @@
 import os
 from collections.abc import Generator
 from pathlib import Path
+
+from .common import str2file
+
 import fnmatch
 
 DEFAULT_SFX = '_filetree.txt'
@@ -60,6 +63,7 @@ class FileTreeDisplay:
             or the whole built tree, as a string of CRLF-separated lines.
         """
         root_path_str = str(self.root_path)
+        filepath = self.filepath
         if not self.root_path.is_dir():
             raise NotADirectoryError(f"The path '{root_path_str}' is not a directory.")
 
@@ -68,7 +72,8 @@ class FileTreeDisplay:
         tree_info = self.get_tree_info(iterator)
 
         if self.save2file:
-            return self.buffer2file(tree_info)
+            str2file(tree_info, filepath)
+            return filepath
 
         if self.printout:
             print(tree_info)
@@ -132,27 +137,6 @@ class FileTreeDisplay:
         if name in ignore_set:
             return True
         return any(fnmatch.fnmatch(name, pattern) for pattern in ignore_set)
-
-    def buffer2file(self, buffer: str) -> str:
-        """Save the formatted file directly from a string buffer.
-
-        Args:
-            buffer (str): a string of CRLF-separated lines.
-
-        Returns:
-            str: Path to the saved output file.
-        """
-        out_file = self.format_out_path()
-        try:
-            with out_file.open('w', encoding='utf-8') as f:
-                f.write(buffer)
-
-        except PermissionError as e:
-            raise PermissionError(f"Cannot write to '{out_file}': {e}")
-        except OSError as e:
-            raise OSError(f"Error writing file '{out_file}': {e}")
-
-        return str(out_file)
 
     def format_out_path(self) -> Path:
         alt_file_name = f'{self.root_path.name}{DEFAULT_SFX}'

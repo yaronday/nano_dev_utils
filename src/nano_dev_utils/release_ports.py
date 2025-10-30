@@ -2,7 +2,7 @@ import platform
 import subprocess
 import logging
 
-from nano_dev_utils.common import update
+from .common import update
 
 
 lgr = logging.getLogger(__name__)

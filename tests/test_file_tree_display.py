@@ -128,7 +128,6 @@ def test_format_out_path_with_filepath(ftd: FileTreeDisplay, tmp_path: Path) -> 
 def test_format_out_path_without_filepath(ftd: FileTreeDisplay, tmp_path: Path) -> None:
     """format_out_path computes output filename if filepath not set."""
     ftd.filepath = None
-    DEFAULT_SFX = '_filetree.txt'
     expected = tmp_path / f'{tmp_path.name}{DEFAULT_SFX}'
     out = ftd.format_out_path()
     assert out == expected

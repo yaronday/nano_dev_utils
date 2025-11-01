@@ -1,7 +1,6 @@
 [project]
 name = "nano_dev_utils"
-version = "1.2.3"
-
+version = "1.4.0"
 authors = [
   { name="Yaron Dayan", email="yaronday77@gmail.com" },
 ]
@@ -14,20 +13,20 @@ classifiers = [
 ]
 license = { text = "MIT" }
 
-[project.files]
-license = { path = "LICENSE" }
-
-[project.optional-dependencies]
-test = [
-    "pytest>=8.2.0",
-    "pytest-mock>=3.14.0",
-    "pytest-asyncio>=1.2.0"
-]
-
 [project.urls]
 Homepage = "https://github.com/yaronday/nano_utils"
 Issues = "https://github.com/yaronday/nano_utils/issues"
 license = "https://github.com/yaronday/nano_dev_utils/blob/master/LICENSE"
+
+[project.files]
+license = { path = "LICENSE" }
+
+[dependency-groups]
+test = [
+    "pytest>=8.2.0",
+    "pytest-mock>=3.14.0",
+    "pytest-asyncio>=1.2.0",
+]
 
 [build-system]
 requires = ["hatchling >= 1.26"]

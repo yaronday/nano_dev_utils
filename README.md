@@ -172,14 +172,14 @@ Output can be displayed in the console or saved to a file.
 
 ## Benchmarks
 
-As measured on a dataset of 10553 files, 1235 folders (ca. 16 GB) using Python 3.10 on SSD,   
-FileTreeDisplay completed directory scans up to ~18× faster than Seedir.
+As measured on a dataset of 10553 files, 1235 folders (ca. 16 GB) using Python 3.10 on SSD.   
+Avg. time was measured over 10 runs per configuration.  
 
 | Tool            | Time (s) |
-|-----------------|-----------| 
-| FileTreeDisplay |   0.183   |
-| Seedir          |   3.267   |
-| treelib         |           |
+|-----------------|----------| 
+| FileTreeDisplay | 0.198    |
+| Seedir          | 4.378    |
+
 
 
 #### Class Overview
@@ -189,16 +189,23 @@ Constructs and manages the visual representation of a directory structure.
 
 **Initialization Parameters**
 
-| Parameter        | Type                            | Description                                                 |
-|:-----------------|:--------------------------------|:------------------------------------------------------------|
-| `root_dir`       | `str`                           | Path to the directory to scan.                              |
-| `filepath`       | `str / None`                    | Optional output destination for the saved file tree.        |                                               
-| `ignore_dirs`    | `list[str] or set[str] or None` | Directory names or patterns to skip.                        |                                                
-| `ignore_files`   | `list[str] or set[str] or None` | File names or patterns to skip.                             |
-| `style`          | `str`                           | Character(s) used to mark hierarchy levels (default `'-'`). |
-| `indent`         | `int`                           | Number of style characters per level (default `1`).         |
-| `title`          | `str`                           | Custom title shown in the output.                           |
-| `default_suffix` | `str`                           | Default suffix for saved tree files.                        |
+| Parameter                  | Type                            | Description                                                                 |
+|:---------------------------|:--------------------------------|:----------------------------------------------------------------------------|
+| `root_dir`                 | `str`                           | Path to the directory to scan.                                              |
+| `filepath`                 | `str / None`                    | Optional output destination for the saved file tree.                        |                                               
+| `ignore_dirs`              | `list[str] or set[str] or None` | Directory names or patterns to skip.                                        |                                                
+| `ignore_files`             | `list[str] or set[str] or None` | File names or patterns to skip.                                             |
+| `include_dirs`             | `list[str] or set[str] or None` | Only include specified folder names or patterns.                            |
+| `include_files`            | `list[str] or set[str] or None` | Only include specified file names or patterns, '*.pdf' - only include pdfs. |
+| `style`                    | `str`                           | Character(s) used to mark hierarchy levels. Defaults to `' '`.              |
+| `indent`                   | `int`                           | Number of style characters per level. Defaults `2`.                         |
+| `files_first`              | `bool`                          | Determines whether to list files first. Defaults to False.                  |
+| `sort_key_name`            | `str`                           | Sort key. 'lex' (lexicographic) or 'custom'. Defaults to 'natural'.         |
+| `reverse`                  | `bool`                          | Reversed sorting order.                                                     |
+| `custom_sort`              | `Callable[[str], Any] / None`   | Custom sort key function.                                                   |
+| `title`                    | `str`                           | Custom title shown in the output.                                           |
+| `save2file`                | `bool`                          | Save file tree (folder structure) info into a file.                         |
+| `printout`                 | `bool`                          | Print file tree info.                                                       |
 
 #### Core Methods
 
@@ -206,10 +213,7 @@ Constructs and manages the visual representation of a directory structure.
 Generates the directory tree. If `save2file=True`, saves the output; otherwise prints it directly.
 - `build_tree(dir_path: str, prefix: str = '') -> Generator[str, None, None]`
 Recursively yields formatted lines representing directories and files.
-- `should_ignore(name: str, is_dir: bool) -> bool`
-Returns whether a given file or directory should be ignored based on exclusion patterns.
-- `save2file(header: list[str], iterator: Generator[str, None, None], filepath: str | None = None) -> str`
-Saves the constructed file tree to disk and returns the absolute path.
+
 
 #### Example Usage
 
@@ -220,14 +224,18 @@ from nano_dev_utils.file_tree_display import FileTreeDisplay
 root = r'c:/your_root_dir'
 target_path = r'c:/your_target_path'
 filename = 'filetree.md'
-filepath = Path(target_path, filename)
+filepath = str(Path(target_path, filename))
 
 ftd = FileTreeDisplay(root_dir=root,
-                      ignore_dirs={'.git', 'node_modules', '.idea'},
-                      ignore_files={'.gitignore'}, indent=2, style=' ',
-                      filepath=str(filepath))
+                      ignore_dirs=['.git', 'node_modules', '.idea'],
+                      ignore_files={'.gitignore', '*.toml'}, style='—',
+                      include_dirs=['src', 'tests', 'snapshots'],
+                      filepath=filepath, 
+                      sort_key_name='custom',
+                      custom_sort=(lambda x: any(ext in x.lower() for ext in ('jpg', 'png'))),
+                      reverse=True
+                     )
 ftd.file_tree_display()
-
 ```
 
 

@@ -7,14 +7,14 @@ from importlib.metadata import version
 from .dynamic_importer import Importer
 from .timers import Timer
 from .release_ports import PortsRelease, PROXY_SERVER, INSPECTOR_CLIENT
-from .common import update, encode_dict, str2file
+from .common import update, encode_dict, str2file, PredicateBuilder, FilterSet
 from .file_tree_display import FileTreeDisplay, DEFAULT_SFX
 
 timer = Timer()
 ports_release = PortsRelease()
 importer = Importer()
 filetree_display = FileTreeDisplay(root_dir=str(Path.cwd()))
-
+predicate_builder = PredicateBuilder
 
 __version__ = version('nano-dev-utils')
 
@@ -27,6 +27,9 @@ __all__ = [
     'update',
     'encode_dict',
     'str2file',
+    'PredicateBuilder',
+    'predicate_builder',
+    'FilterSet',
     'timer',
     'ports_release',
     'importer',

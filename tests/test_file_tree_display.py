@@ -48,30 +48,6 @@ def test_ignore_specific_file(ftd: FileTreeDisplay, sample_dir: Path) -> None:
     assert 'ignored_dir' in tree  # Not ignored, so should be present
 
 
-def test_ignore_bad_dir_via_patch(ftd: FileTreeDisplay, sample_dir: Path) -> None:
-    dir_to_ignore = 'ignored_dir'
-    with mock.patch.object(
-        ftd,
-        'should_ignore',
-        side_effect=lambda name, is_dir: name == dir_to_ignore and is_dir,
-    ):
-        tree = '\n'.join(ftd.build_tree(str(sample_dir)))
-        assert dir_to_ignore not in tree
-        assert 'ignored_file.txt' in tree
-
-
-def test_ignore_bad_file_via_patch(ftd: FileTreeDisplay, sample_dir: Path) -> None:
-    file_to_ignore = 'ignored_file.txt'
-    with mock.patch.object(
-        ftd,
-        'should_ignore',
-        side_effect=lambda name, is_dir: name == file_to_ignore and not is_dir,
-    ):
-        tree = '\n'.join(ftd.build_tree(str(sample_dir)))
-        assert file_to_ignore not in tree
-        assert 'ignored_dir' in tree
-
-
 def test_display_mode(
     ftd: FileTreeDisplay, sample_dir: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

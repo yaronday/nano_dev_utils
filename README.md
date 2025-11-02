@@ -31,14 +31,21 @@ This module provides a `Timer` class for measuring the execution time of code bl
         * Records execution times
         * Handles timeout conditions
         * Calculates average execution time across iterations
-        * Prints the function name and execution time (with optional arguments)
+        * Logs the function name and execution time (with optional arguments)
         * Returns the result of the original function (unless timeout occurs)
 
 #### Example Usage:
 
 ```python
 import time
+import logging
 from nano_dev_utils import timer
+
+# This timer version only uses logger, so it has to be configured in your app, for instance: 
+logging.basicConfig(filename='timer example.log',
+                    level=logging.INFO,  # DEBUG, WARNING, ERROR, CRITICAL
+                    format='%(asctime)s - %(levelname)s: %(message)s',
+                    datefmt='%d-%m-%Y %H:%M:%S')
 
 # Basic timing
 @timer.timeit()
@@ -48,15 +55,11 @@ def my_function(a, b=10):
     return a + b
 
 timer.init(precision=6, verbose=True)
-'''
-Alternatively we could have used the `update` method as well: 
+'''Alternative options: 
+timer.update({'precision': 6, 'verbose': True})  # 1. Using update method  
 
-timer.update({'precision': 6, 'verbose': True})  
-
-The above config could be also achieved via explicit instantiation:
-
-from nano_dev_utils.timers import Timer
-timer = Timer(precision=6, verbose=True)
+from nano_dev_utils.timers import Timer  # 2. explicit instantiation
+timer = Timer(precision=6, verbose=True)  
 '''
 
 # Advanced usage with timeout and iterations
@@ -135,7 +138,7 @@ import logging
 from nano_dev_utils import ports_release, PortsRelease
 
 
-# For configuration of logging level and format (supported already):  
+# configure the logger
 logging.basicConfig(filename='port release.log',
                     level=logging.INFO,  # DEBUG, WARNING, ERROR, CRITICAL 
                     format='%(asctime)s - %(levelname)s: %(message)s',
@@ -154,8 +157,9 @@ ports_release.release_all()
 
 ### `file_tree_display.py`
 
-This module provides a class-based utility for generating a visually structured directory tree.  
-It supports recursive traversal, customizable hierarchy styles, and exclusion patterns for directories and files.  
+This module provides a utility for generating a visually structured directory tree.  
+It supports recursive traversal, customizable hierarchy styles, and inclusion / exclusion  
+patterns for directories and files.  
 Output can be displayed in the console or saved to a file.
 
 
@@ -164,11 +168,12 @@ Output can be displayed in the console or saved to a file.
 - Recursively displays and logs directory trees
 - Efficient directory traversal
 - Blazing fast (see Benchmarks below)
-- Generates human-readable file tree structure
+- Generates human-readable file tree structure 
+- Supports including / ignoring specific directories or files via pattern matching
 - Customizable tree display output
 - Optionally saves the resulting tree to a text file
-- Supports ignoring specific directories or files via pattern matching
-- Handles permission and read/write errors gracefully
+- Lightweight, flexible and easily configurable
+
 
 ## Benchmarks
 
@@ -228,11 +233,13 @@ filepath = str(Path(target_path, filename))
 
 ftd = FileTreeDisplay(root_dir=root,
                       ignore_dirs=['.git', 'node_modules', '.idea'],
-                      ignore_files={'.gitignore', '*.toml'}, style='—',
+                      ignore_files=['.gitignore', '*.toml'], 
+                      style='—',
                       include_dirs=['src', 'tests', 'snapshots'],
                       filepath=filepath, 
                       sort_key_name='custom',
                       custom_sort=(lambda x: any(ext in x.lower() for ext in ('jpg', 'png'))),
+                      files_first=True,
                       reverse=True
                      )
 ftd.file_tree_display()

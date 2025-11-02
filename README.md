@@ -10,9 +10,10 @@ This module provides a `Timer` class for measuring the execution time of code bl
 
 #### `Timer` Class
 
-* **`__init__(self, precision: int = 4, verbose: bool = False)`**: Initializes a `Timer` instance.
+* **`__init__(self, precision: int = 4, verbose: bool = False, printout: bool = False)`**: Initializes a `Timer` instance.
     * `precision`: The number of decimal places to record and display time durations. Defaults to 4.
     * `verbose`: Optionally displays the function's positional arguments (args) and keyword arguments (kwargs). Defaults to `False`.
+    * `printout`: Allows printing to console.
 
 * **`def timeit(
         self,
@@ -41,7 +42,7 @@ import time
 import logging
 from nano_dev_utils import timer
 
-# This timer version only uses logger, so it has to be configured in your app, for instance: 
+# This timer version uses a logger but also allows printing (if enabled), so it has to be configured in your app, for instance: 
 logging.basicConfig(filename='timer example.log',
                     level=logging.INFO,  # DEBUG, WARNING, ERROR, CRITICAL
                     format='%(asctime)s - %(levelname)s: %(message)s',
@@ -61,6 +62,8 @@ timer.update({'precision': 6, 'verbose': True})  # 1. Using update method
 from nano_dev_utils.timers import Timer  # 2. explicit instantiation
 timer = Timer(precision=6, verbose=True)  
 '''
+
+timer.update({'printout': True})  # allow printing to console
 
 # Advanced usage with timeout and iterations
 @timer.timeit(iterations=5, timeout=0.5, per_iteration=True)

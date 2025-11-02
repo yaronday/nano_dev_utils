@@ -23,7 +23,7 @@ def test_timeit_simple(
     timer_mock: Timer, mock_logger: Mock, mock_print: Mock, mocker: MockerFixture
 ) -> None:
     mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, int(923_470)])
-    expected = 'sample_function took 923.47μs'
+    expected = 'sample_function took 923.47 μs'
     timer_mock.init(precision=2, printout=True)
 
     @timer_mock.timeit()
@@ -50,7 +50,7 @@ def test_timeit_no_args_kwargs(
     result = yet_another_function()
     assert result == 'yet another result'
     mock_time.assert_any_call()
-    mock_logger.info.assert_called_once_with('yet_another_function () {} took 0.50ns')
+    mock_logger.info.assert_called_once_with('yet_another_function () {} took 0.50 ns')
     mock_print.assert_not_called()
 
 
@@ -69,7 +69,7 @@ def test_multithreaded_timing(
 
     results = []
 
-    expected = f'took {sim_time_us:.{timer_mock.precision}f}μs'
+    expected = f'took {sim_time_us:.{timer_mock.precision}f} μs'
 
     @timer_mock.timeit()
     def threaded_operation():
@@ -109,7 +109,7 @@ def test_verbose_mode(
     assert '(1, 2)' in output  # checking positional args
     assert "'c': 4" in output  # checking kwargs
     mock_logger.info.assert_called_once_with(
-        "func_with_args (1, 2) {'c': 4} took 42.3456μs"
+        "func_with_args (1, 2) {'c': 4} took 42.3456 μs"
     )
     assert res == 7  # checking returned value preservation
 
@@ -226,7 +226,7 @@ def test_timeit_with_iterations(
     mock_time.assert_any_call()
 
     mock_logger.info.assert_called_once_with(
-        f'sample_function took {sum(sim_times_ns) / 3e3:.{timer_mock.precision}f}μs (avg. over {k} runs)'
+        f'sample_function took {sum(sim_times_ns) / 3e3:.{timer_mock.precision}f} μs (avg. over {k} runs)'
     )
 
 
@@ -324,11 +324,11 @@ def test_timeout_with_fast_function(
 
     @timer_mock.timeit(timeout=1.0)
     def func(duration: float) -> str:
-        return f'{SIM_COMPLETE_TIME} {duration}s'
+        return f'{SIM_COMPLETE_TIME} {duration} s'
 
     result = func(sim_time_s)
 
     mock_logger.info.assert_called_once_with(
-        f'func took {sim_time_ms:.{timer_mock.precision}f}ms'
+        f'func took {sim_time_ms:.{timer_mock.precision}f} ms'
     )
-    assert result == f'{SIM_COMPLETE_TIME} {sim_time_s}s'
+    assert result == f'{SIM_COMPLETE_TIME} {sim_time_s} s'

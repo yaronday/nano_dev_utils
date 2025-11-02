@@ -7,7 +7,6 @@ from unittest.mock import Mock
 
 from nano_dev_utils.timers import Timer
 
-
 SIM_COMPLETE_TIME = 'Function completed in simulated'
 
 
@@ -24,7 +23,7 @@ def test_timeit_simple(
     timer_mock: Timer, mock_logger: Mock, mock_print: Mock, mocker: MockerFixture
 ) -> None:
     mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, int(923_470)])
-
+    expected = 'sample_function took 923.47μs'
     timer_mock.init(precision=2, printout=True)
 
     @timer_mock.timeit()
@@ -34,12 +33,12 @@ def test_timeit_simple(
     result = sample_function()
     assert result == 'result'
     mock_time.assert_any_call()
-    mock_logger.info.assert_called_once_with('sample_function took 923.47μs')
-    mock_print.assert_called_once_with('sample_function took 923.47μs')
+    mock_logger.info.assert_called_once_with(expected)
+    mock_print.assert_called_once_with(expected)
 
 
 def test_timeit_no_args_kwargs(
-    timer_mock: Timer, mock_logger: Mock,  mock_print: Mock, mocker: MockerFixture
+    timer_mock: Timer, mock_logger: Mock, mock_print: Mock, mocker: MockerFixture
 ) -> None:
     mock_time = mocker.patch('time.perf_counter_ns', side_effect=[1.0, 1.5])
     timer_mock.init(precision=2, verbose=True)
@@ -70,6 +69,8 @@ def test_multithreaded_timing(
 
     results = []
 
+    expected = f'took {sim_time_us:.{timer_mock.precision}f}μs'
+
     @timer_mock.timeit()
     def threaded_operation():
         return threading.get_ident()
@@ -88,7 +89,7 @@ def test_multithreaded_timing(
     assert len(set(results)) == num_of_threads
 
     for call_args in mock_logger.info.call_args_list:
-        assert f'took {sim_time_us:.{timer_mock.precision}f}μs' in call_args[0][0]
+        assert expected in call_args[0][0]
 
 
 def test_verbose_mode(

@@ -61,7 +61,9 @@ def encode_dict(input_dict: dict) -> bytes:
     return b' '.join(str(v).encode() for v in input_dict.values())
 
 
-def str2file(content: AnyStr, filepath: str, mode: str = 'w', enc: str = 'utf-8') -> None:
+def str2file(
+    content: AnyStr, filepath: str, mode: str = 'w', enc: str = 'utf-8'
+) -> None:
     """Simply save file directly from any string content.
 
     Args:
@@ -86,32 +88,48 @@ def str2file(content: AnyStr, filepath: str, mode: str = 'w', enc: str = 'utf-8'
 
 
 class PredicateBuilder:
-    def build_predicate(self, allow: FilterSet, block: FilterSet) -> Callable[[str], bool]:
+    def build_predicate(
+        self, allow: FilterSet, block: FilterSet
+    ) -> Callable[[str], bool]:
         """Build a memory-efficient predicate function."""
         compile_patts = self.compile_patts
 
         allow_lits, allow_patts = compile_patts(allow)
         block_lits, block_patts = compile_patts(block)
 
-        flag = (1 if allow_lits or allow_patts else 0,
-                1 if block_lits or block_patts else 0)
+        flag = (
+            1 if allow_lits or allow_patts else 0,
+            1 if block_lits or block_patts else 0,
+        )
 
         match flag:  # (allow, block)
             case (0, 0):
                 return lambda name: True
 
             case (0, 1):
-                return partial(self._match_patt_with_lits,
-                               name_patts=block_patts, name_lits=block_lits, negate=True)
+                return partial(
+                    self._match_patt_with_lits,
+                    name_patts=block_patts,
+                    name_lits=block_lits,
+                    negate=True,
+                )
 
             case (1, 0):
-                return partial(self._match_patt_with_lits, name_patts=allow_patts,
-                               name_lits=allow_lits, negate=False)
+                return partial(
+                    self._match_patt_with_lits,
+                    name_patts=allow_patts,
+                    name_lits=allow_lits,
+                    negate=False,
+                )
 
             case (1, 1):
-                return partial(self._allow_block_predicate,
-                               allow_lits=allow_lits, allow_patts=allow_patts,
-                               block_lits=block_lits, block_patts=block_patts)
+                return partial(
+                    self._allow_block_predicate,
+                    allow_lits=allow_lits,
+                    allow_patts=allow_patts,
+                    block_lits=block_lits,
+                    block_patts=block_patts,
+                )
 
     @staticmethod
     def compile_patts(fs: FilterSet) -> tuple[set[str], list[re.Pattern]]:
@@ -119,7 +137,7 @@ class PredicateBuilder:
             return set(), []
         literals, patterns = set(), []
         for item in fs:
-            if "*" in item or "?" in item or "[" in item:
+            if '*' in item or '?' in item or '[' in item:
                 patterns.append(re.compile(fnmatch.translate(item)))
             else:
                 literals.add(item)
@@ -130,15 +148,27 @@ class PredicateBuilder:
         """Return True if name matches any compiled regex pattern."""
         return any(pat.fullmatch(name) for pat in patterns)
 
-    def _match_patt_with_lits(self, name: str, *, name_lits: set[str],
-                              name_patts: list[re.Pattern], negate: bool = False) -> bool:
+    def _match_patt_with_lits(
+        self,
+        name: str,
+        *,
+        name_lits: set[str],
+        name_patts: list[re.Pattern],
+        negate: bool = False,
+    ) -> bool:
         """Return True if name is in literals or matches any pattern."""
         res = name in name_lits or self._match_patts(name, name_patts)
         return not res if negate else res
 
-    def _allow_block_predicate(self, name: str,
-                               *, allow_lits: set[str], allow_patts: list[re.Pattern],
-                               block_lits: set[str], block_patts: list[re.Pattern]) -> bool:
+    def _allow_block_predicate(
+        self,
+        name: str,
+        *,
+        allow_lits: set[str],
+        allow_patts: list[re.Pattern],
+        block_lits: set[str],
+        block_patts: list[re.Pattern],
+    ) -> bool:
         """Return True if name is allowed and not blocked (block takes precedence)."""
         if name in block_lits or self._match_patts(name, block_patts):
             return False

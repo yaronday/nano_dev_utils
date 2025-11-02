@@ -23,7 +23,9 @@ R = TypeVar('R')
 
 
 class Timer:
-    def __init__(self, precision: int = 4, verbose: bool = False, printout: bool = False):
+    def __init__(
+        self, precision: int = 4, verbose: bool = False, printout: bool = False
+    ):
         self.precision = precision
         self.verbose = verbose
         self.printout = printout
@@ -34,8 +36,8 @@ class Timer:
     def update(self, attrs: dict[str, Any]) -> None:
         update(self, attrs)
 
-    def res_formatter(self, *args: float, **kwargs: int) -> str:
-        return self._duration_formatter(*args, **kwargs)
+    def res_formatter(self, elapsed_ns: float, *, precision: int = 4) -> str:
+        return self._duration_formatter(elapsed_ns, precision=precision)
 
     def timeit(
         self,
@@ -65,7 +67,6 @@ class Timer:
         def decorator(
             func: Callable[RP, RR] | Callable[RP, Awaitable[RR]],
         ) -> Callable[RP, Any]:
-
             if inspect.iscoroutinefunction(func):
                 async_func = cast(Callable[RP, Awaitable[RR]], func)
 

@@ -3,7 +3,7 @@ import re
 
 from collections.abc import Generator
 from pathlib import Path
-from typing_extensions import LiteralString, Callable, Any
+from typing_extensions import Callable, Any
 
 from .common import str2file, FilterSet, PredicateBuilder
 
@@ -22,22 +22,23 @@ class FileTreeDisplay:
     visual representations of directories and files.
     Supports exclusion lists, configurable indentation, and custom prefix styles.
     """
+
     def __init__(
-            self,
-            root_dir: str | None = None,
-            filepath: str | None = None,
-            ignore_dirs: FilterSet = None,
-            ignore_files: FilterSet = None,
-            include_dirs: FilterSet = None,
-            include_files: FilterSet = None,
-            style: str = ' ',
-            indent: int = 2,
-            files_first: bool = False,
-            sort_key_name: str = 'natural',
-            reverse: bool = False,
-            custom_sort: Callable[[str], Any] | None = None,
-            save2file: bool = True,
-            printout: bool = False,
+        self,
+        root_dir: str | None = None,
+        filepath: str | None = None,
+        ignore_dirs: FilterSet = None,
+        ignore_files: FilterSet = None,
+        include_dirs: FilterSet = None,
+        include_files: FilterSet = None,
+        style: str = ' ',
+        indent: int = 2,
+        files_first: bool = False,
+        sort_key_name: str = 'natural',
+        reverse: bool = False,
+        custom_sort: Callable[[str], Any] | None = None,
+        save2file: bool = True,
+        printout: bool = False,
     ) -> None:
         """Initialize the FileTreeDisplay instance.
 
@@ -82,7 +83,9 @@ class FileTreeDisplay:
 
         self.pb = PredicateBuilder()
         self.dir_filter = self.pb.build_predicate(self.include_dirs, self.ignore_dirs)
-        self.file_filter = self.pb.build_predicate(self.include_files, self.ignore_files)
+        self.file_filter = self.pb.build_predicate(
+            self.include_files, self.ignore_files
+        )
 
     def init(self, *args, **kwargs) -> None:
         self.__init__(*args, **kwargs)
@@ -95,13 +98,16 @@ class FileTreeDisplay:
 
     def update_predicates(self):
         self.dir_filter = self.pb.build_predicate(self.include_dirs, self.ignore_dirs)
-        self.file_filter = self.pb.build_predicate(self.include_files, self.ignore_files)
+        self.file_filter = self.pb.build_predicate(
+            self.include_files, self.ignore_files
+        )
 
     @staticmethod
-    def _nat_key(name: str) -> list[int | LiteralString]:
+    def _nat_key(name: str) -> list[int | str | Any]:
         """Natural sorting key"""
-        return [int(part) if part.isdigit() else part.lower()
-                for part in _NUM_SPLIT(name)]
+        return [
+            int(part) if part.isdigit() else part.lower() for part in _NUM_SPLIT(name)
+        ]
 
     @staticmethod
     def _lex_key(name: str) -> str:
@@ -127,7 +133,7 @@ class FileTreeDisplay:
 
         tree_info = self.get_tree_info(iterator)
 
-        if self.save2file:
+        if self.save2file and filepath:
             str2file(tree_info, filepath)
             return filepath
 
@@ -141,8 +147,7 @@ class FileTreeDisplay:
         lines.extend(list(iterator))
         return '\n'.join(lines)
 
-    def build_tree(self, dir_path: str,
-                   prefix: str = '') -> Generator[str, None, None]:
+    def build_tree(self, dir_path: str, prefix: str = '') -> Generator[str, None, None]:
         """Yields formatted directory tree lines, using a recursive DFS.
         Intended order of appearance is with a preference to subdirectories first.
 
@@ -163,9 +168,10 @@ class FileTreeDisplay:
 
         if sort_key is None:
             if sort_key_name == 'custom':
-                raise ValueError("custom_sort function must be specified"
-                                 " when sort_key_name='custom'")
-            raise ValueError(f"Invalid sort key name: {sort_key_name}")
+                raise ValueError(
+                    "custom_sort function must be specified when sort_key_name='custom'"
+                )
+            raise ValueError(f'Invalid sort key name: {sort_key_name}')
 
         try:
             with os.scandir(dir_path) as entries:
@@ -181,7 +187,11 @@ class FileTreeDisplay:
                             append_file(name)
 
         except (PermissionError, OSError) as e:
-            msg = '[Permission Denied]' if isinstance(e, PermissionError) else '[Error reading directory]'
+            msg = (
+                '[Permission Denied]'
+                if isinstance(e, PermissionError)
+                else '[Error reading directory]'
+            )
             yield f'{next_prefix}{msg}'
             return
 

@@ -103,14 +103,14 @@ def test_hours_only(res_form_mock) -> None:
         (65000000000, '1m 5s', 4),
         (3600000000000, '1h', 4),
         (3661000000000, '1h 1m 1s', 4),
-        (7205000000000, '2h 5s', 4),  # Fixed: no zero minutes
+        (7205000000000, '2h 5s', 4),
     ],
 )
 def test_parameterized(
     res_form_mock, ns_input: float, expected_output: str, precision: int
 ) -> None:
     """Parameterized test covering all major cases"""
-    result = res_form_mock(ns_input, precision)
+    result = res_form_mock(ns_input, precision=precision)
     assert result == expected_output
 
 
@@ -127,9 +127,7 @@ def test_comprehensive_hour_decomposition(res_form_mock) -> None:
     assert res_form_mock(7205000000000) == '2h 5s'
 
 
-def test_format_duration_in_decorator_context(
-    res_form_mock, mock_logger: Mock
-) -> None:
+def test_format_duration_in_decorator_context(res_form_mock, mock_logger: Mock) -> None:
     """Test that format_duration works in a decorator-like context"""
     test_cases = [
         (150, '150.00ns'),

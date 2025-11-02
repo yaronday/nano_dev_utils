@@ -23,15 +23,19 @@ R = TypeVar('R')
 
 
 class Timer:
-    def __init__(self, precision: int = 4, verbose: bool = False):
+    def __init__(self, precision: int = 4, verbose: bool = False, printout: bool = False):
         self.precision = precision
         self.verbose = verbose
+        self.printout = printout
 
     def init(self, *args, **kwargs) -> None:
         self.__init__(*args, **kwargs)
 
     def update(self, attrs: dict[str, Any]) -> None:
         update(self, attrs)
+
+    def res_formatter(self, *args: float, **kwargs: int) -> str:
+        return self._duration_formatter(*args, **kwargs)
 
     def timeit(
         self,
@@ -53,12 +57,15 @@ class Timer:
         RP = ParamSpec('RP')
         RR = TypeVar('RR')
 
-        precision = self.precision
+        precision, verbose, printout = self.precision, self.verbose, self.printout
+        check_timeout = self._check_timeout
+        duration_formatter = self._duration_formatter
+        formatted_msg = self._formatted_msg
 
         def decorator(
             func: Callable[RP, RR] | Callable[RP, Awaitable[RR]],
         ) -> Callable[RP, Any]:
-            verbose = self.verbose
+
             if inspect.iscoroutinefunction(func):
                 async_func = cast(Callable[RP, Awaitable[RR]], func)
 
@@ -73,7 +80,7 @@ class Timer:
                         duration_ns = time.perf_counter_ns() - start_ns
                         total_elapsed_ns += duration_ns
 
-                        self._check_timeout(
+                        check_timeout(
                             func_name,
                             i,
                             duration_ns,
@@ -82,12 +89,14 @@ class Timer:
                             per_iteration,
                         )
                     avg_elapsed_ns = total_elapsed_ns / iterations
-                    duration_str = self._duration_formatter(avg_elapsed_ns, precision)
+                    duration_str = duration_formatter(avg_elapsed_ns, precision)
 
-                    msg = self._formatted_msg(
+                    msg = formatted_msg(
                         func_name, args, kwargs, duration_str, iterations, verbose
                     )
                     lgr.info(msg)
+                    if printout:
+                        print(msg)
                     return cast(RR, result)
 
                 return cast(Callable[RP, Awaitable[RR]], async_wrapper)
@@ -104,7 +113,7 @@ class Timer:
                         result = sync_func(*args, **kwargs)
                         duration_ns = time.perf_counter_ns() - start_ns
                         total_elapsed_ns += duration_ns
-                        self._check_timeout(
+                        check_timeout(
                             func_name,
                             i,
                             duration_ns,
@@ -113,11 +122,13 @@ class Timer:
                             per_iteration,
                         )
                     avg_elapsed_ns = total_elapsed_ns / iterations
-                    duration_str = self._duration_formatter(avg_elapsed_ns, precision)
-                    msg = self._formatted_msg(
+                    duration_str = duration_formatter(avg_elapsed_ns, precision)
+                    msg = formatted_msg(
                         func_name, args, kwargs, duration_str, iterations, verbose
                     )
                     lgr.info(msg)
+                    if printout:
+                        print(msg)
                     return cast(RR, result)
 
                 return cast(Callable[RP, RR], sync_wrapper)

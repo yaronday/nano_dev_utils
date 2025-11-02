@@ -3,6 +3,8 @@ import logging
 
 from pytest_mock import MockerFixture
 from unittest.mock import Mock, AsyncMock
+from typing import Callable
+
 from nano_dev_utils import timers, timer
 from nano_dev_utils.timers import Timer
 
@@ -17,6 +19,11 @@ def mock_logger(mocker: MockerFixture) -> Mock:
 @pytest.fixture
 def timer_mock() -> Timer:
     return timer
+
+
+@pytest.fixture
+def res_form_mock() -> Callable[..., str]:
+    return timer.res_formatter
 
 
 @pytest.fixture

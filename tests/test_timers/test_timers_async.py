@@ -6,6 +6,7 @@ from pytest_mock import MockerFixture
 from unittest.mock import Mock, AsyncMock
 
 from nano_dev_utils.timers import Timer
+from .conftest import assert_called_with_substr
 
 
 @pytest.mark.asyncio
@@ -26,11 +27,17 @@ async def test_async_function_timing(
 async def test_timer_async_function(
     timer_mock: Timer,
     mock_logger: Mock,
+    mock_print: Mock,
     mocker: MockerFixture,
     async_sleep_mocker: AsyncMock,
 ) -> None:
     mocker.patch('asyncio.sleep', async_sleep_mocker)
+
     timer_mock.init(precision=6)
+
+    timer_mock.update({'printout': True})
+
+    expected_func_name = 'fast_async'
 
     @timer_mock.timeit()
     async def fast_async(x):
@@ -39,9 +46,10 @@ async def test_timer_async_function(
 
     result = await fast_async(10)
     assert result == 20
-    assert mock_logger.info.called
-    log_args = mock_logger.info.call_args[0][0]
-    assert 'fast_async' in log_args
+
+    log_args = assert_called_with_substr(mock_logger.info, expected_func_name)
+    assert_called_with_substr(mock_print, expected_func_name)
+
     assert re.search(r'fast_async took\s+([0-9]*\.[0-9]+)\s*\[?(ns|μs)]?', log_args)
 
 
@@ -72,3 +80,5 @@ async def test_async_function_with_delay(
 
     result = await async_with_sleep()
     assert result == 'completed'
+
+

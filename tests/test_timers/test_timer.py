@@ -21,11 +21,11 @@ def test_initialization(timer_mock) -> None:
 
 
 def test_timeit_simple(
-    timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture
+    timer_mock: Timer, mock_logger: Mock, mock_print: Mock, mocker: MockerFixture
 ) -> None:
     mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, int(923_470)])
 
-    timer_mock.init(precision=2)
+    timer_mock.init(precision=2, printout=True)
 
     @timer_mock.timeit()
     def sample_function():
@@ -35,10 +35,11 @@ def test_timeit_simple(
     assert result == 'result'
     mock_time.assert_any_call()
     mock_logger.info.assert_called_once_with('sample_function took 923.47μs')
+    mock_print.assert_called_once_with('sample_function took 923.47μs')
 
 
 def test_timeit_no_args_kwargs(
-    timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture
+    timer_mock: Timer, mock_logger: Mock,  mock_print: Mock, mocker: MockerFixture
 ) -> None:
     mock_time = mocker.patch('time.perf_counter_ns', side_effect=[1.0, 1.5])
     timer_mock.init(precision=2, verbose=True)
@@ -51,6 +52,7 @@ def test_timeit_no_args_kwargs(
     assert result == 'yet another result'
     mock_time.assert_any_call()
     mock_logger.info.assert_called_once_with('yet_another_function () {} took 0.50ns')
+    mock_print.assert_not_called()
 
 
 def test_multithreaded_timing(

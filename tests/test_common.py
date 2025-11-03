@@ -161,12 +161,12 @@ def test_permission_error(monkeypatch: MonkeyPatch, temp_file: str) -> None:
         str2file('fail', temp_file)
 
 
-def test_oserror(monkeypatch: MonkeyPatch, temp_file) -> None:
+def test_os_error(monkeypatch: MonkeyPatch, temp_file) -> None:
     # Simulate OSError by patching Path.open
-    def raise_oserr(*args, **kwargs):
+    def raise_os_err(*args, **kwargs):
         raise OSError('Simulated')
 
-    monkeypatch.setattr(Path, 'open', raise_oserr)
+    monkeypatch.setattr(Path, 'open', raise_os_err)
     with pytest.raises(OSError, match='Error writing'):
         str2file('fail', temp_file)
 
@@ -186,8 +186,8 @@ def test_type_error_on_wrong_content_mode(
 
 
 def test_str2file_creates_nested_dirs(tmp_path: str):
-    temp_file = Path(tmp_path) / "nested" / "dir" / "testfile.txt"
-    content = "Nested content"
+    temp_file = Path(tmp_path) / 'nested' / 'dir' / 'testfile.txt'
+    content = 'Nested content'
     str2file(content, str(temp_file))
     assert temp_file.exists()
-    assert temp_file.read_text(encoding="utf-8") == content
+    assert temp_file.read_text(encoding='utf-8') == content

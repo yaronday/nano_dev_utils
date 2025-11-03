@@ -73,6 +73,10 @@ def str2file(
         enc (str): Encoding used in text modes; ignored in binary modes. Defaults to 'utf-8'.
     """
     out_file_path = Path(filepath)
+
+    if not out_file_path.parent.exists():
+        out_file_path.parent.mkdir(parents=True, exist_ok=True)
+
     try:
         if 'b' in mode:
             with out_file_path.open(mode) as f:

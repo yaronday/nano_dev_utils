@@ -115,12 +115,13 @@ class FileTreeDisplay:
         return name.lower()
 
     def file_tree_display(self) -> str:
-        """Generate and save the directory tree to a text file.
+        """Generates a directory tree and saves it to a text file.
 
         Returns:
-            Either a str: Path to the saved output file containing the directory tree.
-            or the whole built tree, as a string of CRLF-separated lines.
+            str: The path to the saved output file containing the directory tree,
+                or the complete directory tree as a single CRLF-delimited string.
         """
+
         root_path_str = str(self.root_path)
         filepath = self.filepath
         if not self.root_path.is_dir():

@@ -27,6 +27,7 @@ NS_IN_SEC = 1_000_000_000
 NS_IN_MIN = 60 * NS_IN_SEC
 NS_IN_HOUR = 60 * NS_IN_MIN
 
+
 class Timer:
     def __init__(
         self, precision: int = 4, verbose: bool = False, printout: bool = False
@@ -67,7 +68,7 @@ class Timer:
         precision, verbose, printout = self.precision, self.verbose, self.printout
         check_timeout = self._check_timeout
         duration_formatter = self._duration_formatter
-        formatted_msg = self._formatted_msg
+        format_timing_msg = self._format_timing_msg
 
         def decorator(
             func: Callable[RP, RR] | Callable[RP, Awaitable[RR]],
@@ -97,7 +98,7 @@ class Timer:
                     avg_elapsed_ns = total_elapsed_ns / iterations
                     duration_str = duration_formatter(avg_elapsed_ns, precision)
 
-                    msg = formatted_msg(
+                    msg = format_timing_msg(
                         func_name, args, kwargs, duration_str, iterations, verbose
                     )
                     lgr.info(msg)
@@ -129,7 +130,7 @@ class Timer:
                         )
                     avg_elapsed_ns = total_elapsed_ns / iterations
                     duration_str = duration_formatter(avg_elapsed_ns, precision)
-                    msg = formatted_msg(
+                    msg = format_timing_msg(
                         func_name, args, kwargs, duration_str, iterations, verbose
                     )
                     lgr.info(msg)
@@ -204,7 +205,7 @@ class Timer:
         return f'{int(mins)} m {int(secs)} s' if secs else f'{int(mins)} m'
 
     @staticmethod
-    def _formatted_msg(
+    def _format_timing_msg(
             func_name: str,
             args: tuple,
             kwargs: dict,
@@ -212,22 +213,21 @@ class Timer:
             iterations: int,
             verbose: bool,
     ) -> str:
-        """Format a concise timing message for a decorated function call.
+        """Formats a concise timing message for a decorated function call.
 
         Args:
-            func_name : str Name of the function being measured.
-            args : tuple Positional args
-            kwargs : dict Keyword args
-            duration_str : str Formatted duration string (already unit-scaled).
-            iterations : int Number of timing iterations used for averaging.
-            verbose : bool Whether to include function args in the message.
+            func_name (str): Name of the function being measured.
+            args (tuple): Positional arguments passed to the function.
+            kwargs (dict): Keyword arguments passed to the function.
+            duration_str (str): Formatted duration string (already unit-scaled).
+            iterations (int): Number of timing iterations used for averaging.
+            verbose (bool): Whether to include function arguments in the message.
 
-        Returns
-        -------
-        str
-            A formatted summary string, e.g.:
-            'process_data took 12.31 ms (avg. over 10 runs)'
+        Returns:
+            str: A formatted summary string, for example:
+                'process_data took 12.31 ms (avg. over 10 runs)'
         """
+
         extra_info = f"{args!r} {kwargs!r} " if verbose else ''
         iter_info = f" (avg. over {iterations} runs)" if iterations > 1 else ''
         return f"{func_name} {extra_info}took {duration_str}{iter_info}"

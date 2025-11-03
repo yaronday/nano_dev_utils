@@ -4,14 +4,14 @@ from unittest.mock import Mock
 
 def test_nanoseconds_whole_number(res_form_mock) -> None:
     """Test whole number nanoseconds"""
-    assert res_form_mock(150) == '150.00 ns'
-    assert res_form_mock(1) == '1.00 ns'
-    assert res_form_mock(999) == '999.00 ns'
+    assert res_form_mock(150) == '150.0000 ns'
+    assert res_form_mock(1) == '1.0000 ns'
+    assert res_form_mock(999) == '999.0000 ns'
 
 
 def test_nanoseconds_zero(res_form_mock) -> None:
     """Test zero nanoseconds"""
-    assert res_form_mock(0) == '0.00 ns'
+    assert res_form_mock(0) == '0.0000 ns'
 
 
 def test_microseconds_precision_default(res_form_mock) -> None:
@@ -30,7 +30,7 @@ def test_microseconds_custom_precision(res_form_mock) -> None:
 
 def test_microseconds_boundary(res_form_mock) -> None:
     """Test microsecond boundaries"""
-    assert res_form_mock(999) == '999.00 ns'
+    assert res_form_mock(999) == '999.0000 ns'
     assert res_form_mock(1000) == '1.0000 μs'
     assert res_form_mock(999999) == '999.9990 μs'
 
@@ -56,7 +56,7 @@ def test_milliseconds_rounding_behavior(res_form_mock) -> None:
     assert res_form_mock(999999499) == '999.9995 ms'
     assert res_form_mock(999999500) == '999.9995 ms'
     assert res_form_mock(999999999) == '1000.0000 ms'
-    assert res_form_mock(1000000000) == '1.0 s'
+    assert res_form_mock(1000000000) == '1.0000 s'
 
 
 def test_hours_with_minutes_and_seconds(res_form_mock) -> None:
@@ -86,9 +86,9 @@ def test_hours_only(res_form_mock) -> None:
 @pytest.mark.parametrize(
     'ns_input,expected_output,precision',
     [
-        (0, '0.00 ns', 4),
-        (1, '1.00 ns', 4),
-        (999, '999.00 ns', 4),
+        (0, '0.0000 ns', 4),
+        (1, '1.0000 ns', 4),
+        (999, '999.0000 ns', 4),
         (1000, '1.0000 μs', 4),
         (1500, '1.5000 μs', 4),
         (999999, '999.9990 μs', 4),
@@ -96,9 +96,9 @@ def test_hours_only(res_form_mock) -> None:
         (1500000, '1.5000 ms', 4),
         (999999000, '999.9990 ms', 4),
         (999999999, '1000.0000 ms', 4),
-        (1000000000, '1.0 s', 4),
-        (1500000000, '1.5 s', 4),
-        (10000000000, '10 s', 4),
+        (1000000000, '1.0000 s', 4),
+        (1500000000, '1.5000 s', 4),
+        (10000000000, '10.0000 s', 4),
         (60000000000, '1 m', 4),
         (65000000000, '1 m 5 s', 4),
         (3600000000000, '1 h', 4),
@@ -130,9 +130,9 @@ def test_comprehensive_hour_decomposition(res_form_mock) -> None:
 def test_format_duration_in_decorator_context(res_form_mock, mock_logger: Mock) -> None:
     """Test that format_duration works in a decorator-like context"""
     test_cases = [
-        (150, '150.00 ns'),
+        (150, '150.0000 ns'),
         (1500000, '1.5000 ms'),
-        (1000000000, '1.0 s'),
+        (1000000000, '1.0000 s'),
         (65000000000, '1 m 5 s'),
     ]
 

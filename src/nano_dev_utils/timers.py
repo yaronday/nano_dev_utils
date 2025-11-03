@@ -176,11 +176,11 @@ class Timer:
                 return f'{elapsed_ns / ns_ms:.{precision}f} ms'
             elif elapsed_ns >= ns_us:
                 return f'{elapsed_ns / ns_us:.{precision}f} μs'
-            return f'{elapsed_ns:.2f} ns'
+            return f'{elapsed_ns:.{precision}f} ns'
 
         if elapsed_ns < ns_min:
             seconds = elapsed_ns / ns_sec
-            return f'{seconds:.1f} s' if seconds < 10 else f'{seconds:.0f} s'
+            return f'{seconds:.{precision}f} s'
 
         if elapsed_ns >= ns_hour:
             hours = int(elapsed_ns / ns_hour)

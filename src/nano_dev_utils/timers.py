@@ -21,6 +21,11 @@ lgr = logging.getLogger(__name__)
 P = ParamSpec('P')
 R = TypeVar('R')
 
+NS_IN_US = 1_000
+NS_IN_MS = 1_000_000
+NS_IN_SEC = 1_000_000_000
+NS_IN_MIN = 60 * NS_IN_SEC
+NS_IN_HOUR = 60 * NS_IN_MIN
 
 class Timer:
     def __init__(
@@ -48,9 +53,9 @@ class Timer:
         """Decorator that measures execution time for sync / async functions.
 
         Args:
-            iterations: Number of times to run the function (averaged for reporting).
-            timeout: Optional max allowed time (in seconds); raises TimeoutError if exceeded.
-            per_iteration: If True, enforces timeout per iteration, else cumulatively.
+            iterations: int:  Number of times to run the function (averaged for reporting).
+            timeout: float:   Optional max allowed time (in seconds); raises TimeoutError if exceeded.
+            per_iteration: bool: If True, enforces timeout per iteration, else cumulatively.
 
         Returns:
         A decorated function that behaves identically to the original, with timing logged.
@@ -151,14 +156,14 @@ class Timer:
         precision = self.precision
         timeout_exceeded = f'{func_name} exceeded {timeout:.{precision}f}s'
         if per_iteration:
-            duration_s = duration_ns / 1e9
+            duration_s = duration_ns / NS_IN_SEC
             if duration_s > timeout:
                 raise TimeoutError(
                     f'{timeout_exceeded} on iteration {i} '
                     f'(took {duration_s:.{precision}f}s)'
                 )
         else:
-            total_duration_s = total_elapsed_ns / 1e9
+            total_duration_s = total_elapsed_ns / NS_IN_SEC
             if total_duration_s > timeout:
                 raise TimeoutError(
                     f'{timeout_exceeded} after {i} iterations '
@@ -167,48 +172,63 @@ class Timer:
 
     @staticmethod
     def _duration_formatter(elapsed_ns: float, precision: int = 4) -> str:
-        """Convert nanoseconds to the appropriate time unit, supporting multi-unit results."""
-        ns_sec, ns_min, ns_hour = 1e9, 6e10, 3.6e12
-        ns_ms, ns_us = 1e6, 1e3
+        """Format a duration [ns] into the most appropriate time unit.
 
-        if elapsed_ns < ns_sec:
-            if elapsed_ns >= ns_ms:
-                return f'{elapsed_ns / ns_ms:.{precision}f} ms'
-            elif elapsed_ns >= ns_us:
-                return f'{elapsed_ns / ns_us:.{precision}f} μs'
+        Converts ns into a human-readable string with adaptive precision.
+        Handles ns, μs, ms, s, m, and h, combining units where meaningful.
+        """
+        if elapsed_ns < NS_IN_SEC:
+            if elapsed_ns >= NS_IN_MS:
+                return f'{elapsed_ns / NS_IN_MS:.{precision}f} ms'
+            if elapsed_ns >= NS_IN_US:
+                return f'{elapsed_ns / NS_IN_US:.{precision}f} μs'
             return f'{elapsed_ns:.{precision}f} ns'
 
-        if elapsed_ns < ns_min:
-            seconds = elapsed_ns / ns_sec
-            return f'{seconds:.{precision}f} s'
+        if elapsed_ns < NS_IN_MIN:
+            return f'{elapsed_ns / NS_IN_SEC:.{precision}f} s'
 
-        if elapsed_ns >= ns_hour:
-            hours = int(elapsed_ns / ns_hour)
-            rem = elapsed_ns % ns_hour
-            mins = int(rem / ns_min)
-            secs = int((rem % ns_min) / ns_sec)
+        if elapsed_ns >= NS_IN_HOUR:
+            hours, rem = divmod(elapsed_ns, NS_IN_HOUR)
+            mins, rem = divmod(rem, NS_IN_MIN)
+            secs = rem // NS_IN_SEC
 
-            parts = [f'{hours} h']
+            parts = [f'{int(hours)} h']
             if mins:
-                parts.append(f'{mins} m')
+                parts.append(f'{int(mins)} m')
             if secs:
-                parts.append(f'{secs} s')
+                parts.append(f'{int(secs)} s')
             return ' '.join(parts)
 
-        else:
-            minutes = int(elapsed_ns / ns_min)
-            seconds = int((elapsed_ns % ns_min) / ns_sec)
-            return f'{minutes} m {seconds} s' if seconds else f'{minutes} m'
+        mins, rem = divmod(elapsed_ns, NS_IN_MIN)
+        secs = rem // NS_IN_SEC
+        return f'{int(mins)} m {int(secs)} s' if secs else f'{int(mins)} m'
 
     @staticmethod
     def _formatted_msg(
-        func_name: str,
-        args: tuple,
-        kwargs: dict,
-        duration_str: str,
-        iterations: int,
-        verbose: bool,
+            func_name: str,
+            args: tuple,
+            kwargs: dict,
+            duration_str: str,
+            iterations: int,
+            verbose: bool,
     ) -> str:
-        extra_info = f'{args} {kwargs} ' if verbose else ''
-        iter_info = f' (avg. over {iterations} runs)' if iterations > 1 else ''
-        return f'{func_name} {extra_info}took {duration_str}{iter_info}'
+        """Format a concise timing message for a decorated function call.
+
+        Args:
+            func_name : str Name of the function being measured.
+            args : tuple Positional args
+            kwargs : dict Keyword args
+            duration_str : str Formatted duration string (already unit-scaled).
+            iterations : int Number of timing iterations used for averaging.
+            verbose : bool Whether to include function args in the message.
+
+        Returns
+        -------
+        str
+            A formatted summary string, e.g.:
+            'process_data took 12.31 ms (avg. over 10 runs)'
+        """
+        extra_info = f"{args!r} {kwargs!r} " if verbose else ''
+        iter_info = f" (avg. over {iterations} runs)" if iterations > 1 else ''
+        return f"{func_name} {extra_info}took {duration_str}{iter_info}"
+

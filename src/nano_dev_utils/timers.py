@@ -206,12 +206,12 @@ class Timer:
 
     @staticmethod
     def _format_timing_msg(
-            func_name: str,
-            args: tuple,
-            kwargs: dict,
-            duration_str: str,
-            iterations: int,
-            verbose: bool,
+        func_name: str,
+        args: tuple,
+        kwargs: dict,
+        duration_str: str,
+        iterations: int,
+        verbose: bool,
     ) -> str:
         """Formats a concise timing message for a decorated function call.
 
@@ -228,7 +228,6 @@ class Timer:
                 'process_data took 12.31 ms (avg. over 10 runs)'
         """
 
-        extra_info = f"{args!r} {kwargs!r} " if verbose else ''
-        iter_info = f" (avg. over {iterations} runs)" if iterations > 1 else ''
-        return f"{func_name} {extra_info}took {duration_str}{iter_info}"
-
+        extra_info = f'{args!r} {kwargs!r} ' if verbose else ''
+        iter_info = f' (avg. over {iterations} runs)' if iterations > 1 else ''
+        return f'{func_name} {extra_info}took {duration_str}{iter_info}'

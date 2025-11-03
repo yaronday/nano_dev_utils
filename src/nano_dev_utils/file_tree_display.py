@@ -149,11 +149,10 @@ class FileTreeDisplay:
         return '\n'.join(lines)
 
     def build_tree(self, dir_path: str, prefix: str = '') -> Generator[str, None, None]:
-        """Yields formatted directory tree lines, using a recursive DFS.
-        Intended order of appearance is with a preference to subdirectories first.
+        """Yields lines representing a formatted folder structure using a recursive DFS.
 
         Args:
-            dir_path (str): The directory path currently being traversed.
+            dir_path (str): The directory path or disk drive currently being traversed.
             prefix (str): Hierarchical prefix applied to each level.
 
         Yields:

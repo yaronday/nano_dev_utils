@@ -124,6 +124,7 @@ class FileTreeDisplay:
 
         root_path_str = str(self.root_path)
         filepath = self.filepath
+
         if not self.root_path.is_dir():
             raise NotADirectoryError(f"The path '{root_path_str}' is not a directory.")
 

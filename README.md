@@ -183,20 +183,20 @@ Output can be displayed in the console or saved to a file.
 A measurement on an unfiltered, high-depth dataset of 10553 files, 1235 folders (ca. 16 GB) using Python 3.10 on SSD.   
 Avg. time was measured over 20 runs per configuration, using `timeit` decorator I've implemented in this package. 
 
-Comparing FileTreeDisplay (FTD) 
-[with tree_wrapper](https://github.com/yaronday/nano_dev_utils/blob/master/benchmark/win_tree_wrapper.py) 
+Comparing FileTreeDisplay (FTD) with
+[win_tree_wrapper](https://github.com/yaronday/nano_dev_utils/blob/master/benchmark/win_tree_wrapper.py) 
 (Windows [Tree](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/tree) 
 wrapper which I've implemented for this purpose):  
 
-ftd_run took 177.444 ms (avg. over 20 runs)  
-win_tree_cmd took 390.665 ms (avg. over 20 runs)
+03-11-2025 17:10:06 - INFO: ftd_run took 182.155 ms (avg. over 20 runs)  
+03-11-2025 17:10:14 - INFO: win_tree_cmd took 406.849 ms (avg. over 20 runs)
 
 | Tool   | Time (s) |
 |--------|----------| 
-| FTD    | 0.177    |
-| Tree   | 0.391    |
+| FTD    | 0.182    |
+| Tree   | 0.407    |
 
-
+[Benchtest code](https://github.com/yaronday/nano_dev_utils/blob/master/benchmark/benchtest.py)
 
 
 #### Class Overview

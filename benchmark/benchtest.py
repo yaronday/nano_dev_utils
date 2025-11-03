@@ -14,27 +14,12 @@ logging.basicConfig(
     datefmt='%d-%m-%Y %H:%M:%S',
 )
 
+ITER = 20
 
 root = r'c:/HugeHighDepthFolder'  # a directory nested many levels deep within a file system hierarchy.
 target_path = r'YourTargetPath'
 
-IGNORE_FOLDERS: list[str] = [
-    '.git',
-    '.idea',
-    '.pytest_cache',
-    '.ruff_cache',
-    '.venv',
-    '__pycache__',
-]
-
-IGNORE_FILES = ['.gitignore']
-
-INCLUDE_FOLDERS: list[str] = ['Chemistry', 'AdditionalStudyMaterial']
-INCLUDE_FILES: list[str] = ['*.docx']
-
-ITER = 20
-
-timer.update({'precision': 3, 'printout': True})
+timer.update({'precision': 3})
 
 
 @timer.timeit(iterations=ITER)
@@ -60,7 +45,7 @@ def win_tree_cmd():
 
 
 def run():
-    # ftd_out = ftd_run()
+    ftd_run()
     win_tree_cmd()
 
 

@@ -94,6 +94,7 @@ class Timer:
                             total_elapsed_ns,
                             timeout,
                             per_iteration,
+                            precision
                         )
                     avg_elapsed_ns = total_elapsed_ns / iterations
                     duration_str = duration_formatter(avg_elapsed_ns, precision)
@@ -127,6 +128,7 @@ class Timer:
                             total_elapsed_ns,
                             timeout,
                             per_iteration,
+                            precision
                         )
                     avg_elapsed_ns = total_elapsed_ns / iterations
                     duration_str = duration_formatter(avg_elapsed_ns, precision)
@@ -142,33 +144,34 @@ class Timer:
 
         return decorator
 
+    @staticmethod
     def _check_timeout(
-        self,
         func_name: str,
         i: int,
         duration_ns: float,
         total_elapsed_ns: float,
         timeout: float | None,
         per_iteration: bool,
+        precision
     ) -> None:
         """Raise TimeoutError if timeout is exceeded."""
         if timeout is None:
             return
-        precision = self.precision
-        timeout_exceeded = f'{func_name} exceeded {timeout:.{precision}f}s'
+
+        timeout_exceeded = f'{func_name} exceeded {timeout:.{precision}f} s'
         if per_iteration:
             duration_s = duration_ns / NS_IN_SEC
             if duration_s > timeout:
                 raise TimeoutError(
                     f'{timeout_exceeded} on iteration {i} '
-                    f'(took {duration_s:.{precision}f}s)'
+                    f'(took {duration_s:.{precision}f} s)'
                 )
         else:
             total_duration_s = total_elapsed_ns / NS_IN_SEC
             if total_duration_s > timeout:
                 raise TimeoutError(
                     f'{timeout_exceeded} after {i} iterations '
-                    f'(took {total_duration_s:.{precision}f}s)'
+                    f'(took {total_duration_s:.{precision}f} s)'
                 )
 
     @staticmethod

@@ -5,7 +5,7 @@ import re
 from pytest_mock import MockerFixture
 from unittest.mock import Mock
 
-from nano_dev_utils.timers import Timer
+from nano_dev_utils.timers import Timer, NS_IN_SEC, NS_IN_MS, NS_IN_US
 
 SIM_COMPLETE_TIME = 'Function completed in simulated'
 
@@ -59,7 +59,7 @@ def test_multithreaded_timing(
 ) -> None:
     """Test timer_mock works correctly across threads"""
     sim_time_us = 1  # μs
-    sim_time_ns = sim_time_us * 1e3
+    sim_time_ns = sim_time_us * NS_IN_US
     num_of_threads = 4
     mocker.patch(
         'time.perf_counter_ns',
@@ -166,12 +166,12 @@ def test_unit_scaling(
 ) -> None:
     """Test the time unit selection logic directly"""
     boundary_cases = [
-        (1e3 - 1, 'ns'),
-        (1e3, 'μs'),
-        (1e6 - 1, 'μs'),
-        (1e6, 'ms'),
-        (1e9 - 1, 'ms'),
-        (1e9, 's'),
+        (NS_IN_US - 1, 'ns'),
+        (NS_IN_US, 'μs'),
+        (NS_IN_MS - 1, 'μs'),
+        (NS_IN_MS, 'ms'),
+        (NS_IN_SEC - 1, 'ms'),
+        (NS_IN_SEC, 's'),
     ]
 
     for ns, expected_unit in boundary_cases:
@@ -207,7 +207,7 @@ def test_timeit_with_iterations(
     timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture
 ) -> None:
     k = 3
-    sim_times_ns = [0, 1e3, 0, 2e3, 0, 3e3]
+    sim_times_ns = [i * NS_IN_US if i else 0 for i in [0, 1, 0, 2, 0, 3]]
     mock_time = mocker.patch(
         'time.perf_counter_ns',
         side_effect=sim_times_ns,
@@ -226,7 +226,7 @@ def test_timeit_with_iterations(
     mock_time.assert_any_call()
 
     mock_logger.info.assert_called_once_with(
-        f'sample_function took {sum(sim_times_ns) / 3e3:.{timer_mock.precision}f} μs (avg. over {k} runs)'
+        f'sample_function took {sum(sim_times_ns) / 3 / NS_IN_US:.{timer_mock.precision}f} μs (avg. over {k} runs)'
     )
 
 
@@ -234,7 +234,7 @@ def test_timeout_single_iteration(timer_mock: Timer, mocker: MockerFixture) -> N
     cfg_timeout_s = 0.1
     duration_s = cfg_timeout_s + 0.1
     current_time_ns = 0.0
-    duration_ns = duration_s * 1e9
+    duration_ns = duration_s * NS_IN_SEC
 
     mocker.patch(
         'time.perf_counter_ns',
@@ -252,12 +252,12 @@ def test_timeout_single_iteration(timer_mock: Timer, mocker: MockerFixture) -> N
     with pytest.raises(TimeoutError) as exc_info:
         timed_function()
 
-    assert f'took {duration_s:.{timer_mock.precision}f}s' in str(exc_info.value)
+    assert f'took {duration_s:.{timer_mock.precision}f} s' in str(exc_info.value)
 
 
 def test_timeout_multiple_iterations(timer_mock: Timer, mocker: MockerFixture) -> None:
     sim_time_per_iter_s = 0.3
-    sim_time_per_iter_ns = sim_time_per_iter_s * 1e9
+    sim_time_per_iter_ns = sim_time_per_iter_s * NS_IN_SEC
 
     k = 5
     timeout_threshold = (k - 1) * sim_time_per_iter_s - 0.1
@@ -272,13 +272,13 @@ def test_timeout_multiple_iterations(timer_mock: Timer, mocker: MockerFixture) -
 
     @timer_mock.timeit(iterations=k, timeout=timeout_threshold)
     def func(duration: float) -> str:
-        return f'{SIM_COMPLETE_TIME} {duration}s'
+        return f'{SIM_COMPLETE_TIME} {duration} s'
 
     with pytest.raises(TimeoutError) as exc_info:
         func(sim_time_per_iter_s)
 
-    expected_timeout_val = f'{timeout_threshold:.{timer_mock.precision}f}s'
-    expected_taken_val = f'{(sim_time_per_iter_s * (k - 1)):.{timer_mock.precision}f}s'
+    expected_timeout_val = f'{timeout_threshold:.{timer_mock.precision}f} s'
+    expected_taken_val = f'{(sim_time_per_iter_s * (k - 1)):.{timer_mock.precision}f} s'
 
     expected_message_template = (
         f'func exceeded {expected_timeout_val} after {k - 1} iterations '
@@ -305,8 +305,8 @@ def test_timeout_per_iteration(timer_mock: Timer, mocker: MockerFixture) -> None
         func(sim_time_s)
 
     assert (
-        f'exceeded {cfg_timeout:.{timer_mock.precision}f}s on iteration 1 '
-        f'(took {sim_time_s:.{timer_mock.precision}f}s)'
+        f'exceeded {cfg_timeout:.{timer_mock.precision}f} s on iteration 1 '
+        f'(took {sim_time_s:.{timer_mock.precision}f} s)'
     ) in str(exc_info.value)
 
 
@@ -314,10 +314,10 @@ def test_timeout_with_fast_function(
     timer_mock: Timer, mock_logger: Mock, mocker: MockerFixture
 ) -> None:
     sim_time_ms = 50.1
-    sim_time_s = sim_time_ms / 1e3
+    sim_time_s = sim_time_ms / NS_IN_US
 
     mocker.patch(
-        'time.perf_counter_ns', side_effect=[0, sim_time_ms * 1e6], autospec=True
+        'time.perf_counter_ns', side_effect=[0, sim_time_ms * NS_IN_MS], autospec=True
     )
 
     timer_mock.init()

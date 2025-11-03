@@ -64,7 +64,9 @@ def test_milliseconds_rounding_behavior(res_form_mock) -> None:
 def test_hours_with_minutes_and_seconds(res_form_mock) -> None:
     """Test hours with minutes and seconds"""
     assert res_form_mock(NS_IN_HOUR + NS_IN_MIN + NS_IN_SEC) == '1 h 1 m 1 s'
-    assert res_form_mock(2 * NS_IN_HOUR + 2 * NS_IN_MIN + 2 * NS_IN_SEC) == '2 h 2 m 2 s'
+    assert (
+        res_form_mock(2 * NS_IN_HOUR + 2 * NS_IN_MIN + 2 * NS_IN_SEC) == '2 h 2 m 2 s'
+    )
     assert res_form_mock(2 * NS_IN_HOUR + 5 * NS_IN_SEC) == '2 h 5 s'
 
 
@@ -125,7 +127,9 @@ def test_comprehensive_hour_decomposition(res_form_mock) -> None:
     assert res_form_mock(NS_IN_HOUR + 5 * NS_IN_SEC) == '1 h 5 s'
     assert res_form_mock(2 * NS_IN_HOUR + 10 * NS_IN_SEC) == '2 h 10 s'
     assert res_form_mock(NS_IN_HOUR + NS_IN_MIN + NS_IN_SEC) == '1 h 1 m 1 s'
-    assert res_form_mock(2 * NS_IN_HOUR + 2 * NS_IN_MIN + 2 * NS_IN_SEC) == '2 h 2 m 2 s'
+    assert (
+        res_form_mock(2 * NS_IN_HOUR + 2 * NS_IN_MIN + 2 * NS_IN_SEC) == '2 h 2 m 2 s'
+    )
     assert res_form_mock(2 * NS_IN_HOUR + 5 * NS_IN_SEC) == '2 h 5 s'
 
 

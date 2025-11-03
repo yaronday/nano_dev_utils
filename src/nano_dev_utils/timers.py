@@ -94,7 +94,7 @@ class Timer:
                             total_elapsed_ns,
                             timeout,
                             per_iteration,
-                            precision
+                            precision,
                         )
                     avg_elapsed_ns = total_elapsed_ns / iterations
                     duration_str = duration_formatter(avg_elapsed_ns, precision)
@@ -128,7 +128,7 @@ class Timer:
                             total_elapsed_ns,
                             timeout,
                             per_iteration,
-                            precision
+                            precision,
                         )
                     avg_elapsed_ns = total_elapsed_ns / iterations
                     duration_str = duration_formatter(avg_elapsed_ns, precision)
@@ -152,7 +152,7 @@ class Timer:
         total_elapsed_ns: float,
         timeout: float | None,
         per_iteration: bool,
-        precision
+        precision,
     ) -> None:
         """Raise TimeoutError if timeout is exceeded."""
         if timeout is None:

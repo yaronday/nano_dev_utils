@@ -156,7 +156,7 @@ class FileTreeDisplay:
             prefix (str): Hierarchical prefix applied to each level.
 
         Yields:
-            str: A formatted string representing either a directory or a file.
+            str: A formatted text representation of the folder structure.
         """
         files_first = self.files_first
         dir_filter, file_filter = self.dir_filter, self.file_filter
@@ -210,10 +210,3 @@ class FileTreeDisplay:
         if not files_first:
             for name in files:
                 yield next_prefix + name
-
-    def format_out_path(self) -> Path:
-        alt_file_name = f'{self.root_path.name}{DEFAULT_SFX}'
-        out_file = (
-            Path(self.filepath) if self.filepath else (self.root_path / alt_file_name)
-        )
-        return out_file

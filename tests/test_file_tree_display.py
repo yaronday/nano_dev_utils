@@ -92,18 +92,3 @@ def test_build_tree_oserror(ftd: FileTreeDisplay) -> None:
     with mock.patch('os.scandir', side_effect=OSError):
         results = list(ftd.build_tree(str(ftd.root_path)))
         assert any('[Error reading directory]' in line for line in results)
-
-
-def test_format_out_path_with_filepath(ftd: FileTreeDisplay, tmp_path: Path) -> None:
-    """format_out_path uses filepath property if set."""
-    ftd.filepath = str(tmp_path / 'myfile.txt')
-    out = ftd.format_out_path()
-    assert out == Path(ftd.filepath)
-
-
-def test_format_out_path_without_filepath(ftd: FileTreeDisplay, tmp_path: Path) -> None:
-    """format_out_path computes output filename if filepath not set."""
-    ftd.filepath = None
-    expected = tmp_path / f'{tmp_path.name}{DEFAULT_SFX}'
-    out = ftd.format_out_path()
-    assert out == expected

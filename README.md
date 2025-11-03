@@ -1,6 +1,7 @@
 # nano_dev_utils
 
 A collection of small Python utilities for developers.
+[PYPI package: nano-dev-utils](https://pypi.org/project/nano-dev-utils)
 
 ## Modules
 
@@ -42,7 +43,7 @@ import time
 import logging
 from nano_dev_utils import timer
 
-# This timer version uses a logger but also allows printing (if enabled), so it has to be configured in your app, for instance: 
+# if printout is not enabled, a logger must be configured in order to see timing results
 logging.basicConfig(filename='timer example.log',
                     level=logging.INFO,  # DEBUG, WARNING, ERROR, CRITICAL
                     format='%(asctime)s - %(levelname)s: %(message)s',
@@ -140,8 +141,7 @@ It supports Windows, Linux, and macOS.
 import logging
 from nano_dev_utils import ports_release, PortsRelease
 
-
-# configure the logger
+ 
 logging.basicConfig(filename='port release.log',
                     level=logging.INFO,  # DEBUG, WARNING, ERROR, CRITICAL 
                     format='%(asctime)s - %(levelname)s: %(message)s',
@@ -180,20 +180,28 @@ Output can be displayed in the console or saved to a file.
 
 ## Benchmarks
 
-As measured on a dataset of 10553 files, 1235 folders (ca. 16 GB) using Python 3.10 on SSD.   
-Avg. time was measured over 10 runs per configuration.  
+A measurement on an unfiltered, high-depth dataset of 10553 files, 1235 folders (ca. 16 GB) using Python 3.10 on SSD.   
+Avg. time was measured over 10 runs per configuration, using `timeit` decorator I've implemented in this package. 
 
-| Tool            | Time (s) |
-|-----------------|----------| 
-| FileTreeDisplay | 0.198    |
-| Seedir          | 4.378    |
+Comparing FileTreeDisplay (FTD) with tree_wrapper 
+(Windows [Tree](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/tree) 
+wrapper which I've implemented for this purpose):  
+
+ftd_run took 194.887 ms (avg. over 10 runs)  
+win_tree_cmd took 391.468 ms (avg. over 10 runs)
+
+| Tool   | Time (s) |
+|--------|----------| 
+| FTD    | 0.195    |
+| Tree   | 0.392    |
+
 
 
 
 #### Class Overview
 
 **`FileTreeDisplay`**
-Constructs and manages the visual representation of a directory structure.
+Constructs and manages the visual representation of a folder structure of a path or of a disk drive.
 
 **Initialization Parameters**
 

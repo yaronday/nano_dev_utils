@@ -37,7 +37,7 @@ def test_basic_structure_generation(ftd_mock: FileTreeDisplay) -> None:
 
 def test_ignore_specific_dir(ftd_mock: FileTreeDisplay, sample_dir: Path) -> None:
     """Test that a specific directory is properly ignored."""
-    ftd_mock.update({'ignore_dirs': {'ignored_dir'}})
+    ftd_mock.init(ignore_dirs=['ignored_dir'])
     tree = '\n'.join(ftd_mock.build_tree(str(sample_dir)))
     assert 'ignored_dir' not in tree
     assert 'ignored_file.txt' in tree  # Not ignored, so should be present
@@ -45,7 +45,7 @@ def test_ignore_specific_dir(ftd_mock: FileTreeDisplay, sample_dir: Path) -> Non
 
 def test_ignore_specific_file(ftd_mock: FileTreeDisplay, sample_dir: Path) -> None:
     """Test that a specific file is properly ignored."""
-    ftd_mock.update({'ignore_files': {'ignored_file.txt'}})
+    ftd_mock.init(ignore_files=['ignored_file.txt'])
     tree = '\n'.join(ftd_mock.build_tree(str(sample_dir)))
     assert 'ignored_file.txt' not in tree
     assert 'ignored_dir' in tree  # Not ignored, so should be present
@@ -65,7 +65,7 @@ def test_display_mode(
 
 def test_style_and_indent_applied(ftd_mock: FileTreeDisplay, sample_dir: Path) -> None:
     """Ensure style and indentation customize the formatted output."""
-    ftd_mock.update({'style': '*', 'indent': 3})
+    ftd_mock.init(style='*', indent=3)
     lines = list(ftd_mock.build_tree(str(sample_dir)))
     assert all(line.startswith('***') for line in lines if not line.startswith('['))
 

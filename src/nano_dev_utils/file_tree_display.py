@@ -10,7 +10,7 @@ from .common import str2file, FilterSet, PredicateBuilder
 
 DEFAULT_SFX = '_filetree.txt'
 
-STYLES: list[str] = [' ', '-', '—', '_', '*', '>', '<', '+', '.']
+SINGLE_CHARS: list[str] = [' ', '-', '—', '_', '*', '>', '<', '+', '.']
 
 _NUM_SPLIT = re.compile(r'(\d+)').split
 
@@ -31,7 +31,7 @@ class FileTreeDisplay:
         ignore_files: FilterSet = None,
         include_dirs: FilterSet = None,
         include_files: FilterSet = None,
-        style: str = ' ',
+        style: str = 'classic',
         indent: int = 2,
         files_first: bool = False,
         sort_key_name: str = 'natural',
@@ -74,6 +74,12 @@ class FileTreeDisplay:
         self.save2file = save2file
         self.printout = printout
 
+        self.style_dict: dict = {
+            'classic': self.connector_styler('├── ', '└── '),
+            'dash': self.connector_styler('|-- ', '`-- '),
+            'arrow': self.connector_styler('├─> ', '└─> '),
+        }
+
         self.sort_keys = {
             'natural': self._nat_key,
             'lex': self._lex_key,
@@ -87,14 +93,20 @@ class FileTreeDisplay:
             self.include_files, self.ignore_files
         )
 
+    def format_style(self) -> dict:
+        style_keys = list(self.style_dict.keys())
+        style = self.style
+        if style not in style_keys and style not in SINGLE_CHARS:
+            raise ValueError(
+                f"'{style}' is invalid: must be one of {style_keys} or {SINGLE_CHARS}\n"
+            )
+        elif style in SINGLE_CHARS:  # fallback to old style
+            return self.connector_styler('', '', style)
+        else:
+            return self.style_dict[style]
+
     def init(self, *args, **kwargs) -> None:
         self.__init__(*args, **kwargs)
-
-    def update(self, attrs: dict) -> None:
-        self.__dict__.update(attrs)
-        pattern = re.compile(r'^(ign|inc)')
-        if any(pattern.match(key) for key in attrs):
-            self.update_predicates()
 
     def update_predicates(self):
         self.dir_filter = self.pb.build_predicate(self.include_dirs, self.ignore_dirs)
@@ -128,9 +140,6 @@ class FileTreeDisplay:
         if not self.root_path.is_dir():
             raise NotADirectoryError(f"The path '{root_path_str}' is not a directory.")
 
-        if self.style not in STYLES:
-            raise ValueError(f"'{self.style}' is invalid: must be one of {STYLES}\n")
-
         iterator = self.build_tree(root_path_str)
 
         tree_info = self.get_tree_info(iterator)
@@ -163,9 +172,20 @@ class FileTreeDisplay:
         dir_filter, file_filter = self.dir_filter, self.file_filter
         sort_key_name, reverse = self.sort_key_name, self.reverse
         sort_key = self.sort_keys.get(self.sort_key_name)
-        curr_indent = self.style * self.indent
 
-        next_prefix = prefix + curr_indent
+        next_prefix = prefix + self.style * self.indent
+
+        style: dict = self.format_style()
+
+        def yield_entry(_name, _path=None, _is_dir=False, _is_last=False):
+            connector = style['end'] if _is_last else style['branch']
+            formatted_name = _name + '/' if _is_dir else _name
+            updated_prefix = next_prefix if connector == '' else f'{prefix}{connector}'
+            yield f'{updated_prefix}{formatted_name}'
+
+            if _is_dir and _path:
+                extension = style['space'] if _is_last else style['vertical']
+                yield from self.build_tree(_path, prefix + extension)
 
         if sort_key is None:
             if sort_key_name == 'custom':
@@ -193,21 +213,29 @@ class FileTreeDisplay:
                 if isinstance(e, PermissionError)
                 else '[Error reading directory]'
             )
-            yield f'{next_prefix}{msg}'
+            yield msg
             return
 
         if sort_key:
             dirs.sort(key=lambda d: sort_key(d[0]), reverse=reverse)
             files.sort(key=sort_key, reverse=reverse)
 
+        combined = []
         if files_first:
-            for name in files:
-                yield next_prefix + name
+            combined.extend([(f, None, False) for f in files])
+            combined.extend([(d[0], d[1], True) for d in dirs])
+        else:
+            combined.extend([(d[0], d[1], True) for d in dirs])
+            combined.extend([(f, None, False) for f in files])
 
-        for name, path in dirs:
-            yield f'{next_prefix}{name}/'
-            yield from self.build_tree(path, next_prefix)
+        count = len(combined)
 
-        if not files_first:
-            for name in files:
-                yield next_prefix + name
+        for idx, (name, path, is_dir) in enumerate(combined):
+            is_last = idx == count - 1
+            yield from yield_entry(name, path, is_dir, is_last)
+
+    def connector_styler(self, branch: str, end: str, char: str = '') -> dict:
+        indent = self.indent
+        space = ' ' * indent if char == '' else char * indent
+        vertical = f'│{" " * (indent - 1)}' if char == '' else space
+        return {'space': space, 'vertical': vertical, 'branch': branch, 'end': end}

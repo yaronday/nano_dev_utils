@@ -214,7 +214,7 @@ Constructs and manages the visual representation of a folder structure of a path
 | `ignore_files`             | `list[str] or set[str] or None` | File names or patterns to skip.                                             |
 | `include_dirs`             | `list[str] or set[str] or None` | Only include specified folder names or patterns.                            |
 | `include_files`            | `list[str] or set[str] or None` | Only include specified file names or patterns, '*.pdf' - only include pdfs. |
-| `style`                    | `str`                           | Character(s) used to mark hierarchy levels. Defaults to `' '`.              |
+| `style`                    | `str`                           | Character(s) used to mark hierarchy levels. Defaults to `'classic'`.        |
 | `indent`                   | `int`                           | Number of style characters per level. Defaults `2`.                         |
 | `files_first`              | `bool`                          | Determines whether to list files first. Defaults to False.                  |
 | `sort_key_name`            | `str`                           | Sort key. 'lex' (lexicographic) or 'custom'. Defaults to 'natural'.         |
@@ -246,7 +246,7 @@ filepath = str(Path(target_path, filename))
 ftd = FileTreeDisplay(root_dir=root,
                       ignore_dirs=['.git', 'node_modules', '.idea'],
                       ignore_files=['.gitignore', '*.toml'], 
-                      style='—',
+                      style='classic',
                       include_dirs=['src', 'tests', 'snapshots'],
                       filepath=filepath, 
                       sort_key_name='custom',

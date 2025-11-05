@@ -35,6 +35,7 @@ class FileTreeDisplay:
         'style',
         'indent',
         'files_first',
+        'skip_sorting',
         'sort_key_name',
         'reverse',
         'custom_sort',
@@ -58,6 +59,7 @@ class FileTreeDisplay:
         style: str = 'classic',
         indent: int = 2,
         files_first: bool = False,
+        skip_sorting: bool = False,
         sort_key_name: str = 'natural',
         reverse: bool = False,
         custom_sort: Callable[[str], Any] | None = None,
@@ -76,8 +78,8 @@ class FileTreeDisplay:
             style (str): Character(s) used to represent hierarchy levels. Defaults to " ".
             indent (int): Number of style characters used per hierarchy level. Defaults to 2.
             files_first (bool): Determines whether to list files first. Defaults to False.
+            skip_sorting (bool): Directly skip sorting, even if configured.
             sort_key_name (str): sorting key name, e.g. 'lex' for lexicographic or 'custom'. Defaults to 'natural'.
-                                 '' means no sorting.
             reverse (bool): reversed sorting.
             custom_sort (Callable[[str], Any] | None):
             save2file (bool): save file tree info to a file.
@@ -92,6 +94,7 @@ class FileTreeDisplay:
         self.style = style
         self.indent = indent
         self.files_first = files_first
+        self.skip_sorting = skip_sorting
         self.sort_key_name = sort_key_name
         self.reverse = reverse
         self.custom_sort = custom_sort
@@ -102,13 +105,13 @@ class FileTreeDisplay:
             'classic': self.connector_styler('├── ', '└── '),
             'dash': self.connector_styler('|-- ', '`-- '),
             'arrow': self.connector_styler('├─> ', '└─> '),
+            'plus': self.connector_styler('+--- ', '\\--- ')
         }
 
         self.sort_keys = {
             'natural': self._nat_key,
             'lex': self._lex_key,
             'custom': self.custom_sort,
-            '': None,
         }
 
         self.pb = PredicateBuilder()
@@ -168,7 +171,7 @@ class FileTreeDisplay:
             raise NotADirectoryError(f"The path '{root_path_str}' is not a directory.")
 
         style = self.format_style()
-        sort_key = self._resolve_sort_key()
+        sort_key = None if self.skip_sorting else self._resolve_sort_key()
         dir_filter, file_filter = self.dir_filter, self.file_filter
         files_first, reverse = self.files_first, self.reverse
         indent = self.indent
@@ -209,7 +212,7 @@ class FileTreeDisplay:
         *,
         prefix: str,
         style: dict,
-        sort_key: Callable[[str], Any],
+        sort_key: Callable[[str], Any] | None,
         files_first: bool,
         dir_filter: Callable[[str], bool],
         file_filter: Callable[[str], bool],

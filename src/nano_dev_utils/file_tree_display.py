@@ -105,7 +105,7 @@ class FileTreeDisplay:
             'classic': self.connector_styler('├── ', '└── '),
             'dash': self.connector_styler('|-- ', '`-- '),
             'arrow': self.connector_styler('├─> ', '└─> '),
-            'plus': self.connector_styler('+--- ', '\\--- ')
+            'plus': self.connector_styler('+--- ', '\\--- '),
         }
 
         self.sort_keys = {

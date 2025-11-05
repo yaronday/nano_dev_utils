@@ -159,10 +159,8 @@ class FileTreeDisplay:
         """Generates a directory tree and saves it to a text file.
 
         Returns:
-            str: The path to the saved output file containing the directory tree,
-                or the complete directory tree as a single CRLF-delimited string.
+            str: The complete directory tree as a single CRLF-delimited string.
         """
-
         root_path_str = str(self.root_path)
         filepath = self.filepath
 
@@ -191,7 +189,6 @@ class FileTreeDisplay:
 
         if self.save2file and filepath:
             str2file(tree_info, filepath)
-            return filepath
 
         if self.printout:
             print(tree_info)
@@ -199,7 +196,6 @@ class FileTreeDisplay:
         return tree_info
 
     def get_tree_info(self, iterator: Generator[str, None, None]) -> str:
-        # Avoid building large intermediate lists; stream into a StringIO
         buf = io.StringIO()
         write = buf.write
         write(f'{self.root_path.name}/\n')

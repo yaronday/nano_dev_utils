@@ -191,6 +191,8 @@ wrapper which I've implemented for this purpose):
 05-11-2025 12:28:50 - INFO: ftd_run took 195.777 ms (avg. over 20 runs)  
 05-11-2025 12:28:58 - INFO: win_tree_cmd took 390.134 ms (avg. over 20 runs)
 
+Note that the estimated overhead by the wrapper is bounded by ca. 30 ms.
+
 | Tool   | Time (s) |
 |--------|----------| 
 | FTD    | 0.196    |

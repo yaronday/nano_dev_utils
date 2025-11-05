@@ -188,7 +188,7 @@ Comparing FileTreeDisplay (FTD) with
 (Windows [Tree](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/tree) 
 wrapper which I've implemented for this purpose):  
 
-05-11-2025 12:28:50 - INFO: ftd_run took 195.777 ms (avg. over 20 runs)
+05-11-2025 12:28:50 - INFO: ftd_run took 195.777 ms (avg. over 20 runs)  
 05-11-2025 12:28:58 - INFO: win_tree_cmd took 390.134 ms (avg. over 20 runs)
 
 | Tool   | Time (s) |

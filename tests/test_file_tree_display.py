@@ -100,7 +100,7 @@ def test_display_mode(
 
 def test_style_and_indent_applied(ftd_mock: FileTreeDisplay) -> None:
     """Ensure style and indentation customize formatted output."""
-    ftd_mock.init(root_dir=str(ftd_mock.root_path), style='*', indent=3)
+    ftd_mock.init(root_dir=str(ftd_mock.root_path), style='classic', indent=3)
     lines = list(
         ftd_mock._build_tree(
             str(ftd_mock.root_path),
@@ -114,7 +114,33 @@ def test_style_and_indent_applied(ftd_mock: FileTreeDisplay) -> None:
             indent=ftd_mock.indent,
         )
     )
-    assert all(line.startswith('***') for line in lines if not line.startswith('['))
+    assert all(
+        line.startswith('├──')
+        for line in lines
+        if not (line.startswith('│') or line.startswith('└──'))
+    )
+
+
+def test_custom_styles(ftd_mock: FileTreeDisplay) -> None:
+    """Ensure dynamic user-added styles work correctly."""
+    ftd_mock.style_dict['plus'] = ftd_mock.connector_styler('+-- ', '+== ')
+    ftd_mock.style_dict['arrowstar'] = ftd_mock.connector_styler('→* ', '↳* ')
+
+    plus_style = ftd_mock.style_dict['plus']
+    arrowstar_style = ftd_mock.style_dict['arrowstar']
+
+    for s in (plus_style, arrowstar_style):
+        assert set(s.keys()) == {'space', 'vertical', 'branch', 'end'}
+        assert isinstance(s['branch'], str)
+        assert isinstance(s['end'], str)
+
+    ftd_mock.style = 'plus'
+    selected_plus = ftd_mock.format_style()
+    assert selected_plus['branch'].startswith('+')
+
+    ftd_mock.style = 'arrowstar'
+    selected_arrowstar = ftd_mock.format_style()
+    assert '→' in selected_arrowstar['branch'] or '↳' in selected_arrowstar['end']
 
 
 def test_get_tree_info_proper_format(ftd_mock: FileTreeDisplay) -> None:
@@ -191,14 +217,6 @@ def test_custom_sort_key_without_function_raises(ftd_mock: FileTreeDisplay) -> N
     ftd_mock.custom_sort = None
     with pytest.raises(ValueError, match='custom_sort function must be specified'):
         ftd_mock._resolve_sort_key()
-
-
-def test_connector_styler_variants(ftd_mock: FileTreeDisplay) -> None:
-    """Ensure connector_styler generates correct symbols."""
-    default = ftd_mock.connector_styler('├── ', '└── ')
-    custom = ftd_mock.connector_styler('', '', '*')
-    assert 'branch' in default and 'end' in default
-    assert all('*' in v or v == '' for v in custom.values())
 
 
 def test_format_style_invalid(ftd_mock: FileTreeDisplay) -> None:

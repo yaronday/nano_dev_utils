@@ -13,7 +13,6 @@ from .common import str2file, FilterSet, PredicateBuilder
 
 DEFAULT_SFX = '_filetree.txt'
 
-SINGLE_CHARS: list[str] = [' ', '-', '—', '_', '*', '>', '<', '+', '.']
 
 _NUM_SPLIT = re.compile(r'(\d+)').split
 
@@ -119,16 +118,11 @@ class FileTreeDisplay:
         )
 
     def format_style(self) -> dict:
-        style_keys = list(self.style_dict.keys())
-        style = self.style
-        if style not in style_keys and style not in SINGLE_CHARS:
-            raise ValueError(
-                f"'{style}' is invalid: must be one of {style_keys} or {SINGLE_CHARS}\n"
-            )
-        elif style in SINGLE_CHARS:  # fallback to old style
-            return self.connector_styler('', '', style)
-        else:
-            return self.style_dict[style]
+        style, style_dict = self.style, self.style_dict
+        style_keys = list(style_dict.keys())
+        if style not in style_keys:
+            raise ValueError(f"'{style}' is invalid: must be one of {style_keys}\n")
+        return style_dict[style]
 
     def init(self, *args, **kwargs) -> None:
         self.__init__(*args, **kwargs)
@@ -236,15 +230,10 @@ class FileTreeDisplay:
         Yields:
             str: A formatted text representation of the folder structure.
         """
-
-        # Pre-bind frequently used values
-
         branch = style['branch']
         end = style['end']
         vertical = style['vertical']
         space = style['space']
-
-        next_prefix_base = prefix + (space if branch == '' and end == '' else '')
 
         recurse = self._build_tree
 
@@ -294,13 +283,8 @@ class FileTreeDisplay:
             is_last = idx == last_index
             connector = end if is_last else branch
             formatted_name = f'{name}/' if is_dir else name
-
-            if connector:
-                yield f'{prefix}{connector}{formatted_name}'
-                extension = space if is_last else vertical
-            else:  # single-char fallback mode
-                yield f'{next_prefix_base}{formatted_name}'
-                extension = space
+            yield f'{prefix}{connector}{formatted_name}'
+            extension = space if is_last else vertical
 
             if is_dir and path:
                 yield from recurse(
@@ -315,8 +299,11 @@ class FileTreeDisplay:
                     indent=indent,
                 )
 
-    def connector_styler(self, branch: str, end: str, char: str = '') -> dict:
+    def connector_styler(self, branch: str, end: str) -> dict:
         indent = self.indent
-        space = ' ' * indent if char == '' else char * indent
-        vertical = f'│{" " * (indent - 1)}' if char == '' else space
-        return {'space': space, 'vertical': vertical, 'branch': branch, 'end': end}
+        return {
+            'space': ' ' * indent,
+            'vertical': f'│{" " * (indent - 1)}',
+            'branch': branch,
+            'end': end,
+        }

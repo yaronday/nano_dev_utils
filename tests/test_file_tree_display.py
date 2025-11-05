@@ -234,24 +234,23 @@ def test_update_predicates_rebuilds_filters(ftd_mock: FileTreeDisplay) -> None:
     assert ftd_mock.dir_filter is not old_dir_filter
 
 
-def test_file_tree_display_print_and_save(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_file_tree_display_print_and_save(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     """Ensure file_tree_display prints and saves when both flags are enabled."""
-    out_file = tmp_path / "tree.txt"
-    (tmp_path / "subdir").mkdir()
+    out_file = tmp_path / 'tree.txt'
+    (tmp_path / 'subdir').mkdir()
     ftd = FileTreeDisplay(
-        root_dir=str(tmp_path),
-        filepath=str(out_file),
-        save2file=True,
-        printout=True
+        root_dir=str(tmp_path), filepath=str(out_file), save2file=True, printout=True
     )
 
     result = ftd.file_tree_display()
 
     assert isinstance(result, str)
-    assert "subdir" in result
+    assert 'subdir' in result
 
     captured = capsys.readouterr()
-    assert "subdir" in captured.out
+    assert 'subdir' in captured.out
 
-    content = out_file.read_text(encoding="utf-8")
+    content = out_file.read_text(encoding='utf-8')
     assert content.strip() == result.strip()

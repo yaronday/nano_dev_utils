@@ -188,13 +188,13 @@ Comparing FileTreeDisplay (FTD) with
 (Windows [Tree](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/tree) 
 wrapper which I've implemented for this purpose):  
 
-03-11-2025 17:10:06 - INFO: ftd_run took 182.155 ms (avg. over 20 runs)  
-03-11-2025 17:10:14 - INFO: win_tree_cmd took 406.849 ms (avg. over 20 runs)
+05-11-2025 12:28:50 - INFO: ftd_run took 195.777 ms (avg. over 20 runs)
+05-11-2025 12:28:58 - INFO: win_tree_cmd took 390.134 ms (avg. over 20 runs)
 
 | Tool   | Time (s) |
 |--------|----------| 
-| FTD    | 0.182    |
-| Tree   | 0.407    |
+| FTD    | 0.196    |
+| Tree   | 0.390    |
 
 [Benchtest code](https://github.com/yaronday/nano_dev_utils/blob/master/benchmark/benchtest.py)
 
@@ -214,10 +214,10 @@ Constructs and manages the visual representation of a folder structure of a path
 | `ignore_files`             | `list[str] or set[str] or None` | File names or patterns to skip.                                             |
 | `include_dirs`             | `list[str] or set[str] or None` | Only include specified folder names or patterns.                            |
 | `include_files`            | `list[str] or set[str] or None` | Only include specified file names or patterns, '*.pdf' - only include pdfs. |
-| `style`                    | `str`                           | Character(s) used to mark hierarchy levels. Defaults to `' '`.              |
+| `style`                    | `str`                           | Characters used to mark hierarchy levels. Defaults to `'classic'`.          |
 | `indent`                   | `int`                           | Number of style characters per level. Defaults `2`.                         |
 | `files_first`              | `bool`                          | Determines whether to list files first. Defaults to False.                  |
-| `sort_key_name`            | `str`                           | Sort key. 'lex' (lexicographic) or 'custom'. Defaults to 'natural'.         |
+| `sort_key_name`            | `str`                           | Sort key. Lexicographic ('lex') or 'custom'. Defaults to 'natural'.         |
 | `reverse`                  | `bool`                          | Reversed sorting order.                                                     |
 | `custom_sort`              | `Callable[[str], Any] / None`   | Custom sort key function.                                                   |
 | `title`                    | `str`                           | Custom title shown in the output.                                           |
@@ -226,10 +226,23 @@ Constructs and manages the visual representation of a folder structure of a path
 
 #### Core Methods
 
-- `file_tree_display(save2file: bool = True) -> str | None`
+- `file_tree_display(save2file: bool = True) -> str | None`  
 Generates the directory tree. If `save2file=True`, saves the output; otherwise prints it directly.
-- `build_tree(dir_path: str, prefix: str = '') -> Generator[str, None, None]`
-Recursively yields formatted lines representing directories and files.
+
+- `_build_tree(dir_path, *, prefix, style, sort_key,   
+   files_first, dir_filter, file_filter, reverse, indent) -> Generator[str, None, None]`  
+Recursively traverses the directory tree in depth-first order (DFS) and yields formatted lines representing the file and folder structure.
+
+| Parameter                           | Type                    | Description                                                                  |
+|-------------------------------------|-------------------------|------------------------------------------------------------------------------|
+| **`dir_path`**                      | `str`                   | Path to the directory being traversed.                                       |
+| **`prefix`**                        | `str`                   | Current indentation prefix for nested entries.                               |
+| **`style`**                         | `dict[str, str]`        | Connector style mapping with keys: `branch`, `end`, `space`, and `vertical`. |
+| **`sort_key`**                      | `Callable[[str], Any]`  | Function used to sort directory and file names.                              |
+| **`files_first`**                   | `bool`                  | If `True`, list files before subdirectories.                                 |
+| **`dir_filter`**, **`file_filter`** | `Callable[[str], bool]` | Predicates to include or exclude directories and files.                      |
+| **`reverse`**                       | `bool`                  | If `True`, reverses the sort order.                                          |
+| **`indent`**                        | `int`                   | Number of spaces (or repeated characters) per indentation level.             |
 
 
 #### Example Usage
@@ -246,7 +259,7 @@ filepath = str(Path(target_path, filename))
 ftd = FileTreeDisplay(root_dir=root,
                       ignore_dirs=['.git', 'node_modules', '.idea'],
                       ignore_files=['.gitignore', '*.toml'], 
-                      style='—',
+                      style='classic',
                       include_dirs=['src', 'tests', 'snapshots'],
                       filepath=filepath, 
                       sort_key_name='custom',
@@ -254,6 +267,18 @@ ftd = FileTreeDisplay(root_dir=root,
                       files_first=True,
                       reverse=True
                      )
+ftd.file_tree_display()
+```
+
+#### Custom connector style   
+You can define and register your own connector styles at runtime by adding entries to style_dict:
+
+```Python
+from nano_dev_utils.file_tree_display import FileTreeDisplay
+ftd = FileTreeDisplay(root_dir=".")
+ftd.style_dict["plus"] = ftd.connector_styler("+-- ", "+== ")
+ftd.style = "plus"
+ftd.printout = True
 ftd.file_tree_display()
 ```
 

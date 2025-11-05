@@ -270,6 +270,18 @@ ftd = FileTreeDisplay(root_dir=root,
 ftd.file_tree_display()
 ```
 
+#### Custom connector style   
+You can define and register your own connector styles at runtime by adding entries to style_dict:
+
+```Python
+from nano_dev_utils.file_tree_display import FileTreeDisplay
+ftd = FileTreeDisplay(root_dir=".")
+ftd.style_dict["plus"] = ftd.connector_styler("+-- ", "+== ")
+ftd.style = "plus"
+ftd.printout = True
+ftd.file_tree_display()
+```
+
 
 #### Error Handling
 

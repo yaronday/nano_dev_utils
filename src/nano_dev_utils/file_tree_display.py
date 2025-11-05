@@ -1,9 +1,12 @@
+import io
 import os
 import re
 
 from collections.abc import Generator
+from itertools import chain
 from pathlib import Path
 from typing_extensions import Callable, Any
+from typing import Iterable
 
 from .common import str2file, FilterSet, PredicateBuilder
 
@@ -22,6 +25,28 @@ class FileTreeDisplay:
     visual representations of directories and files.
     Supports exclusion lists, configurable indentation, and custom prefix styles.
     """
+
+    __slots__ = (
+        'root_path',
+        'filepath',
+        'ignore_dirs',
+        'ignore_files',
+        'include_dirs',
+        'include_files',
+        'style',
+        'indent',
+        'files_first',
+        'sort_key_name',
+        'reverse',
+        'custom_sort',
+        'save2file',
+        'printout',
+        'style_dict',
+        'sort_keys',
+        'pb',
+        'dir_filter',
+        'file_filter',
+    )
 
     def __init__(
         self,
@@ -108,7 +133,7 @@ class FileTreeDisplay:
     def init(self, *args, **kwargs) -> None:
         self.__init__(*args, **kwargs)
 
-    def update_predicates(self):
+    def update_predicates(self) -> None:
         self.dir_filter = self.pb.build_predicate(self.include_dirs, self.ignore_dirs)
         self.file_filter = self.pb.build_predicate(
             self.include_files, self.ignore_files
@@ -126,6 +151,16 @@ class FileTreeDisplay:
         """Lexicographic sorting key"""
         return name.lower()
 
+    def _resolve_sort_key(self) -> Callable[[str], Any]:
+        key = self.sort_keys.get(self.sort_key_name)
+        if key is None:
+            if self.sort_key_name == 'custom':
+                raise ValueError(
+                    "custom_sort function must be specified when sort_key_name='custom'"
+                )
+            raise ValueError(f'Invalid sort key name: {self.sort_key_name}')
+        return key
+
     def file_tree_display(self) -> str:
         """Generates a directory tree and saves it to a text file.
 
@@ -140,7 +175,23 @@ class FileTreeDisplay:
         if not self.root_path.is_dir():
             raise NotADirectoryError(f"The path '{root_path_str}' is not a directory.")
 
-        iterator = self.build_tree(root_path_str)
+        style = self.format_style()
+        sort_key = self._resolve_sort_key()
+        dir_filter, file_filter = self.dir_filter, self.file_filter
+        files_first, reverse = self.files_first, self.reverse
+        indent = self.indent
+
+        iterator = self._build_tree(
+            root_path_str,
+            prefix='',
+            style=style,
+            sort_key=sort_key,
+            files_first=files_first,
+            dir_filter=dir_filter,
+            file_filter=file_filter,
+            reverse=reverse,
+            indent=indent,
+        )
 
         tree_info = self.get_tree_info(iterator)
 
@@ -154,12 +205,29 @@ class FileTreeDisplay:
         return tree_info
 
     def get_tree_info(self, iterator: Generator[str, None, None]) -> str:
-        lines = [f'{self.root_path.name}/']
-        lines.extend(list(iterator))
-        return '\n'.join(lines)
+        # Avoid building large intermediate lists; stream into a StringIO
+        buf = io.StringIO()
+        write = buf.write
+        write(f'{self.root_path.name}/\n')
+        buf.writelines(f'{line}\n' for line in iterator)
+        out = buf.getvalue()
+        return out[:-1] if out.endswith('\n') else out
 
-    def build_tree(self, dir_path: str, prefix: str = '') -> Generator[str, None, None]:
+    def _build_tree(
+        self,
+        dir_path: str,
+        *,
+        prefix: str,
+        style: dict,
+        sort_key: Callable[[str], Any],
+        files_first: bool,
+        dir_filter: Callable[[str], bool],
+        file_filter: Callable[[str], bool],
+        reverse: bool,
+        indent: int,
+    ) -> Generator[str, None, None]:
         """Yields lines representing a formatted folder structure using a recursive DFS.
+        The internal recursive generator has runtime consts threaded through to avoid attrib. lookups.
 
         Args:
             dir_path (str): The directory path or disk drive currently being traversed.
@@ -168,71 +236,84 @@ class FileTreeDisplay:
         Yields:
             str: A formatted text representation of the folder structure.
         """
-        files_first = self.files_first
-        dir_filter, file_filter = self.dir_filter, self.file_filter
-        sort_key_name, reverse = self.sort_key_name, self.reverse
-        sort_key = self.sort_keys.get(self.sort_key_name)
 
-        next_prefix = prefix + self.style * self.indent
+        # Pre-bind frequently used values
 
-        style: dict = self.format_style()
+        branch = style['branch']
+        end = style['end']
+        vertical = style['vertical']
+        space = style['space']
 
-        def yield_entry(_name, _path=None, _is_dir=False, _is_last=False):
-            connector = style['end'] if _is_last else style['branch']
-            formatted_name = _name + '/' if _is_dir else _name
-            updated_prefix = next_prefix if connector == '' else f'{prefix}{connector}'
-            yield f'{updated_prefix}{formatted_name}'
+        next_prefix_base = prefix + (space if branch == '' and end == '' else '')
 
-            if _is_dir and _path:
-                extension = style['space'] if _is_last else style['vertical']
-                yield from self.build_tree(_path, prefix + extension)
+        recurse = self._build_tree
 
-        if sort_key is None:
-            if sort_key_name == 'custom':
-                raise ValueError(
-                    "custom_sort function must be specified when sort_key_name='custom'"
-                )
-            raise ValueError(f'Invalid sort key name: {sort_key_name}')
+        dirs: list[tuple[str, str]] = []
+        files: list[str] = []
 
         try:
-            with os.scandir(dir_path) as entries:
-                dirs, files = [], []
-                append_dir, append_file = dirs.append, files.append
-                for entry in entries:
+            with os.scandir(dir_path) as it:
+                append_dir = dirs.append
+                append_file = files.append
+                for entry in it:
                     name = entry.name
-                    if entry.is_dir():
+                    try:
+                        is_dir = entry.is_dir(follow_symlinks=False)
+                    except OSError:
+                        continue
+
+                    if is_dir:
                         if dir_filter(name):
                             append_dir((name, entry.path))
                     else:
                         if file_filter(name):
                             append_file(name)
 
-        except (PermissionError, OSError) as e:
-            msg = (
-                '[Permission Denied]'
-                if isinstance(e, PermissionError)
-                else '[Error reading directory]'
-            )
-            yield msg
+        except (PermissionError, OSError, FileNotFoundError) as e:
+            if isinstance(e, PermissionError):
+                yield '[Permission Denied]'
+            else:
+                yield '[Error reading directory]'
             return
 
         if sort_key:
             dirs.sort(key=lambda d: sort_key(d[0]), reverse=reverse)
             files.sort(key=sort_key, reverse=reverse)
 
-        combined = []
-        if files_first:
-            combined.extend([(f, None, False) for f in files])
-            combined.extend([(d[0], d[1], True) for d in dirs])
-        else:
-            combined.extend([(d[0], d[1], True) for d in dirs])
-            combined.extend([(f, None, False) for f in files])
+        # Compute combined sequence without extra temporary tuples where possible
+        f_iter: Iterable[tuple[str, None, bool]] = ((f, None, False) for f in files)
+        d_iter: Iterable[tuple[str, str, bool]] = ((d[0], d[1], True) for d in dirs)
+        seq: Iterable[tuple[str, str | None, bool]] = (
+            chain(f_iter, d_iter) if files_first else chain(d_iter, f_iter)
+        )
 
-        count = len(combined)
+        combined = list(seq)
+        last_index = len(combined) - 1
 
         for idx, (name, path, is_dir) in enumerate(combined):
-            is_last = idx == count - 1
-            yield from yield_entry(name, path, is_dir, is_last)
+            is_last = idx == last_index
+            connector = end if is_last else branch
+            formatted_name = f'{name}/' if is_dir else name
+
+            if connector:
+                yield f'{prefix}{connector}{formatted_name}'
+                extension = space if is_last else vertical
+            else:  # single-char fallback mode
+                yield f'{next_prefix_base}{formatted_name}'
+                extension = space
+
+            if is_dir and path:
+                yield from recurse(
+                    path,
+                    prefix=prefix + extension,
+                    style=style,
+                    sort_key=sort_key,
+                    files_first=files_first,
+                    dir_filter=dir_filter,
+                    file_filter=file_filter,
+                    reverse=reverse,
+                    indent=indent,
+                )
 
     def connector_styler(self, branch: str, end: str, char: str = '') -> dict:
         indent = self.indent

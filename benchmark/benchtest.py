@@ -16,13 +16,13 @@ logging.basicConfig(
 
 ITER = 20
 
-root = r'c:/HugeHighDepthFolder'  # a directory nested many levels deep within a file system hierarchy.
+root = r'c:/HugeFolder'  # a directory that contains many files and subdirectories
 target_path = r'YourTargetPath'
 
 timer.update({'precision': 3})
 
 
-@timer.timeit(iterations=ITER)
+@timer.timeit(iterations=ITER, timeout=10, per_iteration=True)
 def ftd_run():
     filename = 'nano_filetree_FilesFirst.txt'
     filepath = str(Path(target_path, filename))
@@ -37,7 +37,7 @@ def ftd_run():
     return ftd.file_tree_display()
 
 
-@timer.timeit(iterations=ITER)
+@timer.timeit(iterations=ITER, timeout=10, per_iteration=True)
 def win_tree_cmd():
     filename = 'wintree_w_files.txt'
     filepath = str(Path(target_path, filename))

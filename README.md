@@ -295,4 +295,4 @@ The module raises well-defined exceptions for common issues:
 
 ## License
 This project is licensed under the MIT License. 
-See [LICENSE](LICENSE) for details.
+See [LICENSE](https://github.com/yaronday/nano_dev_utils/blob/master/LICENSE) for details.

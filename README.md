@@ -185,7 +185,7 @@ Avg. time was measured over 20 runs per configuration, using `timeit` decorator 
 
 Comparing FileTreeDisplay (FTD) with
 [win_tree_wrapper](https://github.com/yaronday/nano_dev_utils/blob/master/benchmark/win_tree_wrapper.py) 
-(Windows [Tree](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/tree) 
+(Windows [tree](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/tree) 
 wrapper which I've implemented for this purpose).    
 [Benchtest code](https://github.com/yaronday/nano_dev_utils/blob/master/benchmark/benchtest.py)  
 
@@ -206,7 +206,7 @@ wrapper which I've implemented for this purpose).
 | Tool     | T1 (s) | T2 (s) | Relative Speed |
 |:---------|:------:|:------:|:--------------:|
 | **FTD**  | 0.196  | 2.900* |       —        |
-| **Tree** | 0.390  | 5.018  |   ~2x slower   |
+| **tree** | 0.390  | 5.018  |   ~2x slower   |
 
 </td></tr> </table>
 
@@ -263,23 +263,24 @@ Constructs and manages the visual representation of a folder structure of a path
 
 **Initialization Parameters**
 
-| Parameter                  | Type                            | Description                                                                 |
-|:---------------------------|:--------------------------------|:----------------------------------------------------------------------------|
-| `root_dir`                 | `str`                           | Path to the directory to scan.                                              |
-| `filepath`                 | `str / None`                    | Optional output destination for the saved file tree.                        |                                               
-| `ignore_dirs`              | `list[str] or set[str] or None` | Directory names or patterns to skip.                                        |                                                
-| `ignore_files`             | `list[str] or set[str] or None` | File names or patterns to skip.                                             |
-| `include_dirs`             | `list[str] or set[str] or None` | Only include specified folder names or patterns.                            |
-| `include_files`            | `list[str] or set[str] or None` | Only include specified file names or patterns, '*.pdf' - only include pdfs. |
-| `style`                    | `str`                           | Characters used to mark hierarchy levels. Defaults to `'classic'`.          |
-| `indent`                   | `int`                           | Number of style characters per level. Defaults `2`.                         |
-| `files_first`              | `bool`                          | Determines whether to list files first. Defaults to False.                  |
-| `sort_key_name`            | `str`                           | Sort key. Lexicographic ('lex') or 'custom'. Defaults to 'natural'.         |
-| `reverse`                  | `bool`                          | Reversed sorting order.                                                     |
-| `custom_sort`              | `Callable[[str], Any] / None`   | Custom sort key function.                                                   |
-| `title`                    | `str`                           | Custom title shown in the output.                                           |
-| `save2file`                | `bool`                          | Save file tree (folder structure) info into a file.                         |
-| `printout`                 | `bool`                          | Print file tree info.                                                       |
+| Parameter                             | Type                                | Description                                                                      |
+|:--------------------------------------|:------------------------------------|:---------------------------------------------------------------------------------|
+| `root_dir`                            | `str`                               | Path to the directory to scan.                                                   |
+| `filepath`                            | `str / None`                        | Optional output destination for the saved file tree.                             |                                               
+| `ignore_dirs`                         | `list[str] or set[str] or None`     | Directory names or patterns to skip.                                             |                                                
+| `ignore_files`                        | `list[str] or set[str] or None`     | File names or patterns to skip.                                                  |
+| `include_dirs`                        | `list[str] or set[str] or None`     | Only include specified folder names or patterns.                                 |
+| `include_files`                       | `list[str] or set[str] or None`     | Only include specified file names or patterns, '*.pdf' - only include pdfs.      |
+| `style`                               | `str`                               | Characters used to mark hierarchy levels. Defaults to `'classic'`.               |
+| `indent`                              | `int`                               | Number of style characters per level. Defaults `2`.                              |
+| `files_first`                         | `bool`                              | Determines whether to list files first. Defaults to False.                       |
+| `skip_sorting`                        | `bool`                              | Skip sorting directly, even if configured.                                       |
+| `sort_key_name`                       | `str`                               | Sort key. Lexicographic ('lex') or 'custom'. Defaults to 'natural'.              |
+| `reverse`                             | `bool`                              | Reversed sorting order.                                                          |
+| `custom_sort`                         | `Callable[[str], Any] / None`       | Custom sort key function.                                                        |
+| `title`                               | `str`                               | Custom title shown in the output.                                                |
+| `save2file`                           | `bool`                              | Save file tree (folder structure) info into a file.                              |
+| `printout`                            | `bool`                              | Print file tree info.                                                            |
 
 #### Core Methods
 
@@ -333,8 +334,8 @@ You can define and register your own connector styles at runtime by adding entri
 ```Python
 from nano_dev_utils.file_tree_display import FileTreeDisplay
 ftd = FileTreeDisplay(root_dir=".")
-ftd.style_dict["plus"] = ftd.connector_styler("+-- ", "+== ")
-ftd.style = "plus"
+ftd.style_dict["plus2"] = ftd.connector_styler("+-- ", "+== ")
+ftd.style = "plus2"
 ftd.printout = True
 ftd.file_tree_display()
 ```

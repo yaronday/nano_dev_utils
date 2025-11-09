@@ -78,7 +78,7 @@ class FileTreeDisplay:
             style (str): Character(s) used to represent hierarchy levels. Defaults to " ".
             indent (int): Number of style characters used per hierarchy level. Defaults to 2.
             files_first (bool): Determines whether to list files first. Defaults to False.
-            skip_sorting (bool): Directly skip sorting, even if configured.
+            skip_sorting (bool): Skip sorting directly, even if configured.
             sort_key_name (str): sorting key name, e.g. 'lex' for lexicographic or 'custom'. Defaults to 'natural'.
             reverse (bool): reversed sorting.
             custom_sort (Callable[[str], Any] | None):
@@ -149,13 +149,15 @@ class FileTreeDisplay:
         return name.lower()
 
     def _resolve_sort_key(self) -> Callable[[str], Any]:
-        key = self.sort_keys.get(self.sort_key_name)
+        sort_key_name, sort_keys = self.sort_key_name, self.sort_keys
+        key = sort_keys.get(sort_key_name)
         if key is None:
             if self.sort_key_name == 'custom':
                 raise ValueError(
                     "custom_sort function must be specified when sort_key_name='custom'"
                 )
-            raise ValueError(f'Invalid sort key name: {self.sort_key_name}')
+            raise ValueError(f'Invalid sort key name: "{sort_key_name}"! '
+                             f'Currently defined keys are: {list(sort_keys.keys())}')
         return key
 
     def file_tree_display(self) -> str:

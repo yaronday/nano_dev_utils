@@ -24,15 +24,14 @@ timer.update({'precision': 3})
 
 @timer.timeit(iterations=ITER, timeout=10, per_iteration=True)
 def ftd_run():
-    filename = 'nano_filetree_FilesFirst.txt'
+    filename = 'ftd_files_first.txt'
     filepath = str(Path(target_path, filename))
 
     ftd = FileTreeDisplay(
         root_dir=root,
         filepath=filepath,
         save2file=True,
-        files_first=True,  # For the content comparison, since this is the default for 'Tree /F'
-        style=' ',
+        files_first=True,  # default for 'Tree /F'
     )
     return ftd.file_tree_display()
 

@@ -7,8 +7,15 @@ from importlib.metadata import version
 from .dynamic_importer import Importer
 from .timers import Timer
 from .release_ports import PortsRelease, PROXY_SERVER, INSPECTOR_CLIENT
-from .common import update, encode_dict, str2file, PredicateBuilder, FilterSet
-from .file_tree_display import FileTreeDisplay, DEFAULT_SFX
+from .common import (
+    update,
+    encode_dict,
+    str2file,
+    PredicateBuilder,
+    FilterSet,
+    load_cfg_file,
+)
+from .file_tree_display import FileTreeDisplay
 
 timer = Timer()
 ports_release = PortsRelease()
@@ -34,5 +41,6 @@ __all__ = [
     'ports_release',
     'importer',
     'filetree_display',
-    'DEFAULT_SFX',
+    'FileTreeDisplay',
+    'load_cfg_file',
 ]

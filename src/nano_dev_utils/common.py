@@ -1,8 +1,10 @@
 import fnmatch
 import re
+import sys
+import json
 
 from pathlib import Path
-from typing import AnyStr
+from typing import AnyStr, Any
 
 from collections.abc import Callable
 from functools import partial
@@ -179,3 +181,20 @@ class PredicateBuilder:
         if name in allow_lits or self._match_patts(name, allow_patts):
             return True
         return False
+
+
+def load_cfg_file(path: str | None) -> dict[str, Any]:
+    """Load configuration from JSON file."""
+    if not path:
+        return {}
+    cfg_path = Path(path)
+    if not cfg_path.exists():
+        sys.exit(f"Error: config file '{cfg_path}' not found.")
+    try:
+        if cfg_path.suffix == '.json':
+            with open(cfg_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        else:
+            sys.exit('Error: config file must .json')
+    except Exception as e:
+        sys.exit(f'Error reading config file: {e}')

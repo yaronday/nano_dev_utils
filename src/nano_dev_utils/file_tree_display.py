@@ -156,8 +156,10 @@ class FileTreeDisplay:
                 raise ValueError(
                     "custom_sort function must be specified when sort_key_name='custom'"
                 )
-            raise ValueError(f'Invalid sort key name: "{sort_key_name}"! '
-                             f'Currently defined keys are: {list(sort_keys.keys())}')
+            raise ValueError(
+                f'Invalid sort key name: "{sort_key_name}"! '
+                f'Currently defined keys are: {list(sort_keys.keys())}'
+            )
         return key
 
     def file_tree_display(self) -> str:

@@ -183,7 +183,7 @@ class PredicateBuilder:
         return False
 
 
-def load_cfg_file(path: str | None) -> dict[str, Any]:
+def load_cfg_file(path: str | None = None) -> dict[str, Any]:
     """Load configuration from JSON file."""
     if not path:
         return {}

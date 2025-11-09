@@ -1,9 +1,4 @@
-"""CLI interface for FileTreeDisplay with config file, color output, and statistics.
-
-Usage examples:
-    py -m ftd_cli -r ./src --printout
-    py -m ftd_cli --cfg ./ftd.json
-"""
+"""CLI interface for FileTreeDisplay"""
 
 import argparse
 import sys
@@ -14,9 +9,10 @@ from typing import Any
 
 from .file_tree_display import FileTreeDisplay
 from .common import load_cfg_file
+from ._constants import DEFAULT_SFX
 
 
-def parse(argv: list[str] | None = None) -> argparse.Namespace:
+def parse() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Display or export a formatted file tree of a directory.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -63,13 +59,23 @@ def parse(argv: list[str] | None = None) -> argparse.Namespace:
         default='natural',
         help='Sorting mode.',
     )
-    parser.add_argument('--reverse', action='store_true', help='Reverse sort order.')
-    parser.add_argument('--no-save', action='store_true', help='Do not save to file.')
     parser.add_argument(
-        '--printout', '-p', action='store_true', help='Print tree to stdout.'
+        '--reverse', action='store_true', default=False, help='Reverse sort order.'
     )
-    parser.add_argument('--version', action='version', version='file_tree_cli 1.0')
-    return parser.parse_args(argv)
+    parser.add_argument(
+        '--no-save', action='store_true', default=False, help='Do not save to file.'
+    )
+    parser.add_argument(
+        '--printout',
+        '-p',
+        action='store_true',
+        default=False,
+        help='Print tree to stdout.',
+    )
+    parser.add_argument(
+        '--version', '-v', action='version', version=f'{FileTreeDisplay.get_version()}'
+    )
+    return parser.parse_args()
 
 
 def merge_config(
@@ -85,7 +91,7 @@ def merge_config(
 
 def main() -> None:
     args = parse()
-    cfg_dict = load_cfg_file(args.config)
+    cfg_dict = load_cfg_file()
     opts = merge_config(args, cfg_dict)
 
     root_dir = Path(opts.get('root_dir') or Path.cwd())
@@ -94,7 +100,7 @@ def main() -> None:
 
     filepath = opts.get('filepath')
     if not filepath and not opts.get('no-save'):
-        filepath = str(root_dir.with_name(f'{root_dir.name}_filetree.txt'))
+        filepath = str(root_dir.with_name(f'{root_dir.name}{DEFAULT_SFX}'))
 
     ftd = FileTreeDisplay(
         root_dir=str(root_dir),

@@ -8,8 +8,9 @@ from pathlib import Path
 from typing_extensions import Callable, Any
 from typing import Iterable
 
+from importlib.metadata import version, PackageNotFoundError
 from .common import str2file, FilterSet, PredicateBuilder
-
+from ._constants import PKG_NAME
 
 _NUM_SPLIT = re.compile(r'(\d+)').split
 
@@ -116,6 +117,13 @@ class FileTreeDisplay:
         self.file_filter = self.pb.build_predicate(
             self.include_files, self.ignore_files
         )
+
+    @staticmethod
+    def get_version():
+        try:
+            return version(PKG_NAME)
+        except PackageNotFoundError:
+            return 'unknown'
 
     def format_style(self) -> dict:
         style, style_dict = self.style, self.style_dict

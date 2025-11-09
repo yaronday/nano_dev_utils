@@ -11,9 +11,6 @@ from typing import Iterable
 from .common import str2file, FilterSet, PredicateBuilder
 
 
-DEFAULT_SFX = '_filetree.txt'
-
-
 _NUM_SPLIT = re.compile(r'(\d+)').split
 
 
@@ -200,6 +197,8 @@ class FileTreeDisplay:
         if self.printout:
             print(tree_info)
 
+        self.get_num_of_entries(tree_info)
+
         return tree_info
 
     def get_tree_info(self, iterator: Generator[str, None, None]) -> str:
@@ -310,3 +309,9 @@ class FileTreeDisplay:
             'branch': branch,
             'end': end,
         }
+
+    @staticmethod
+    def get_num_of_entries(tree_info: str) -> None:
+        num_of_folders = tree_info.count('/') - 1
+        num_of_files = tree_info.count('\n') - num_of_folders
+        print(f'Scanned {num_of_folders} folders and {num_of_files} files.')

@@ -84,14 +84,14 @@ def merge_config(
     """Merge CLI args and config file into a unified options dict."""
     merged = {**cfg_dict}
     for k, v in vars(cli_args).items():
-        if v is not None and k != 'config':
+        if v is not None and k != 'cfg':
             merged[k] = v
     return merged
 
 
 def main() -> None:
     args = parse()
-    cfg_dict = load_cfg_file()
+    cfg_dict = load_cfg_file(args.cfg)
     opts = merge_config(args, cfg_dict)
 
     root_dir = Path(opts.get('root_dir') or Path.cwd())

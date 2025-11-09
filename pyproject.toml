@@ -1,6 +1,6 @@
 [project]
 name = "nano_dev_utils"
-version = "1.5.2"
+dynamic = ["version"]
 authors = [
   { name="Yaron Dayan", email="yaronday77@gmail.com" },
 ]
@@ -21,6 +21,9 @@ Homepage = "https://github.com/yaronday/nano_utils"
 Issues = "https://github.com/yaronday/nano_utils/issues"
 license = "https://github.com/yaronday/nano_dev_utils/blob/master/LICENSE"
 
+[project.scripts]
+ftd = "nano_dev_utils.__main__:main"
+
 [project.files]
 license = { path = "LICENSE" }
 
@@ -35,3 +38,5 @@ test = [
 requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+path = "src/nano_dev_utils/__version__.py"

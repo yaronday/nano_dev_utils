@@ -17,13 +17,15 @@ from .common import (
 )
 from .file_tree_display import FileTreeDisplay
 
+from ._constants import PKG_NAME
+
 timer = Timer()
 ports_release = PortsRelease()
 importer = Importer()
 filetree_display = FileTreeDisplay(root_dir=str(Path.cwd()))
 predicate_builder = PredicateBuilder
 
-__version__ = version('nano-dev-utils')
+__version__ = version(PKG_NAME)
 
 __all__ = [
     'Importer',

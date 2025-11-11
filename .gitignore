@@ -175,3 +175,5 @@ cython_debug/
 
 /src/*/debug.py
 /src/*/*.log
+
+update_package.py

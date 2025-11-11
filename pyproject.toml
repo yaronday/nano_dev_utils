@@ -21,9 +21,6 @@ Homepage = "https://github.com/yaronday/nano_utils"
 Issues = "https://github.com/yaronday/nano_utils/issues"
 license = "https://github.com/yaronday/nano_dev_utils/blob/master/LICENSE"
 
-[project.scripts]
-ftd = "nano_dev_utils.__main__:main"
-
 [project.files]
 license = { path = "LICENSE" }
 

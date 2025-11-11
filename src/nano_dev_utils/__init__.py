@@ -2,7 +2,6 @@
 Copyright (c) 2025 Yaron Dayan
 """
 
-from pathlib import Path
 from importlib.metadata import version
 from .dynamic_importer import Importer
 from .timers import Timer
@@ -15,14 +14,12 @@ from .common import (
     FilterSet,
     load_cfg_file,
 )
-from .file_tree_display import FileTreeDisplay
 
 from ._constants import PKG_NAME
 
 timer = Timer()
 ports_release = PortsRelease()
 importer = Importer()
-filetree_display = FileTreeDisplay(root_dir=str(Path.cwd()))
 predicate_builder = PredicateBuilder
 
 __version__ = version(PKG_NAME)
@@ -42,7 +39,5 @@ __all__ = [
     'timer',
     'ports_release',
     'importer',
-    'filetree_display',
-    'FileTreeDisplay',
     'load_cfg_file',
 ]

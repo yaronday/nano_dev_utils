@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import AnyStr, Any
 
 from collections.abc import Callable
-from functools import partial
 from typing import TypeAlias
 
 
@@ -113,29 +112,32 @@ class PredicateBuilder:
                 return lambda name: True
 
             case (0, 1):
-                return partial(
-                    self._match_patt_with_lits,
+                return lambda name: self._match_patt_with_lits(
+                    name,
                     name_patts=block_patts,
                     name_lits=block_lits,
                     negate=True,
                 )
 
             case (1, 0):
-                return partial(
-                    self._match_patt_with_lits,
+                return lambda name: self._match_patt_with_lits(
+                    name,
                     name_patts=allow_patts,
                     name_lits=allow_lits,
                     negate=False,
                 )
 
             case (1, 1):
-                return partial(
-                    self._allow_block_predicate,
+                return lambda name: self._allow_block_predicate(
+                    name,
                     allow_lits=allow_lits,
                     allow_patts=allow_patts,
                     block_lits=block_lits,
                     block_patts=block_patts,
                 )
+            case _:
+                return lambda name: False
+
 
     @staticmethod
     def compile_patts(fs: FilterSet) -> tuple[set[str], list[re.Pattern]]:

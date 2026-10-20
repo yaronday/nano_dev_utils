@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import AnyStr, Any
 
 from collections.abc import Callable
-from functools import partial
 from typing import TypeAlias
 
 
@@ -34,7 +33,7 @@ def update(obj: object, attrs: dict) -> None:
                 setattr(obj, key, value)
             except AttributeError as e:
                 raise AttributeError(
-                    f"Cannot set attribute '{key}' on object '{obj}': {e}"
+                    f"Cannot set attribute '{key}' on object '{type(obj).__name__}': {e}"
                 )
 
 
@@ -53,7 +52,7 @@ def encode_dict(input_dict: dict) -> bytes:
 
     Example:
         >>> encode_dict({"a": 1, "b": "test"})
-        b'1 test'
+        b"1 test"
 
     Raises:
         TypeError: If input_dict is not a dictionary.
@@ -113,29 +112,32 @@ class PredicateBuilder:
                 return lambda name: True
 
             case (0, 1):
-                return partial(
-                    self._match_patt_with_lits,
+                return lambda name: self._match_patt_with_lits(
+                    name,
                     name_patts=block_patts,
                     name_lits=block_lits,
                     negate=True,
                 )
 
             case (1, 0):
-                return partial(
-                    self._match_patt_with_lits,
+                return lambda name: self._match_patt_with_lits(
+                    name,
                     name_patts=allow_patts,
                     name_lits=allow_lits,
                     negate=False,
                 )
 
             case (1, 1):
-                return partial(
-                    self._allow_block_predicate,
+                return lambda name: self._allow_block_predicate(
+                    name,
                     allow_lits=allow_lits,
                     allow_patts=allow_patts,
                     block_lits=block_lits,
                     block_patts=block_patts,
                 )
+            case _:
+                return lambda name: False
+
 
     @staticmethod
     def compile_patts(fs: FilterSet) -> tuple[set[str], list[re.Pattern]]:
@@ -144,9 +146,9 @@ class PredicateBuilder:
         literals, patterns = set(), []
         for item in fs:
             if '*' in item or '?' in item or '[' in item:
-                patterns.append(re.compile(fnmatch.translate(item)))
+                patterns.append(re.compile(fnmatch.translate(item), re.IGNORECASE))
             else:
-                literals.add(item)
+                literals.add(item.casefold())
         return literals, patterns
 
     @staticmethod
@@ -163,7 +165,7 @@ class PredicateBuilder:
         negate: bool = False,
     ) -> bool:
         """Return True if name is in literals or matches any pattern."""
-        res = name in name_lits or self._match_patts(name, name_patts)
+        res = name.casefold() in name_lits or self._match_patts(name, name_patts)
         return not res if negate else res
 
     def _allow_block_predicate(

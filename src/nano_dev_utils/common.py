@@ -144,9 +144,9 @@ class PredicateBuilder:
         literals, patterns = set(), []
         for item in fs:
             if '*' in item or '?' in item or '[' in item:
-                patterns.append(re.compile(fnmatch.translate(item)))
+                patterns.append(re.compile(fnmatch.translate(item), re.IGNORECASE))
             else:
-                literals.add(item)
+                literals.add(item.casefold())
         return literals, patterns
 
     @staticmethod
@@ -163,7 +163,7 @@ class PredicateBuilder:
         negate: bool = False,
     ) -> bool:
         """Return True if name is in literals or matches any pattern."""
-        res = name in name_lits or self._match_patts(name, name_patts)
+        res = name.casefold() in name_lits or self._match_patts(name, name_patts)
         return not res if negate else res
 
     def _allow_block_predicate(

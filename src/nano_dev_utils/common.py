@@ -52,7 +52,7 @@ def encode_dict(input_dict: dict) -> bytes:
 
     Example:
         >>> encode_dict({"a": 1, "b": "test"})
-        b'1 test'
+        b"1 test"
 
     Raises:
         TypeError: If input_dict is not a dictionary.

@@ -37,7 +37,10 @@ dev = [
     "build>=1.6.1",
     "twine>=7.0.0",
     "pre-commit>=4.7.0",
+    "ruff",
+    "pyright"
 ]
+
 test = [
     "pytest",
     "pytest-mock",

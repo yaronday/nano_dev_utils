@@ -136,7 +136,7 @@ class PredicateBuilder:
                     block_patts=block_patts,
                 )
             case _:
-                return lambda name: False
+                raise AssertionError(f"Unexpected flag state: {flag}")
 
 
     @staticmethod
@@ -178,9 +178,10 @@ class PredicateBuilder:
         block_patts: list[re.Pattern],
     ) -> bool:
         """Return True if name is allowed and not blocked (block takes precedence)."""
-        if name in block_lits or self._match_patts(name, block_patts):
+        name_folded = name.casefold()
+        if name_folded in block_lits or self._match_patts(name, block_patts):
             return False
-        if name in allow_lits or self._match_patts(name, allow_patts):
+        if name_folded in allow_lits or self._match_patts(name, allow_patts):
             return True
         return False
 

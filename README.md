@@ -3,6 +3,10 @@
 A collection of small Python utilities for developers.
 [PYPI package: nano-dev-utils](https://pypi.org/project/nano-dev-utils)
 
+[![Coverage Status](https://img.shields.io/badge/coverage-99%25-brightgreen.svg)](coverage.md)
+
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 ## Modules
 
 ### `timers.py`
@@ -185,7 +189,3 @@ print(predicate("notes.txt"))       # True (matches allow pattern)
 print(predicate("secret_notes.txt"))  # False (block takes precedence)
 print(predicate("image.png"))       # False (not allowed)
 ```
-
-## License
-This project is licensed under the MIT License. 
-See [LICENSE](https://github.com/yaronday/nano_dev_utils/blob/master/LICENSE) for details.

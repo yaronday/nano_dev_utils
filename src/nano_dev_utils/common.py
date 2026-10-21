@@ -177,9 +177,7 @@ class PredicateBuilder:
         name_folded = name.casefold()
         if name_folded in block_lits or self._match_patts(name, block_patts):
             return False
-        if name_folded in allow_lits or self._match_patts(name, allow_patts):
-            return True
-        return False
+        return name_folded in allow_lits or self._match_patts(name, allow_patts)
 
 
 def load_cfg_file(path: str | None = None) -> dict[str, Any]:
@@ -195,5 +193,5 @@ def load_cfg_file(path: str | None = None) -> dict[str, Any]:
                 return json.load(f)
         else:
             sys.exit('Error: config file must .json')
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         sys.exit(f'Error reading config file: {e}')

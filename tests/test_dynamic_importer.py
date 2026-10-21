@@ -13,7 +13,7 @@ def importer():
 @pytest.fixture
 def mock_module():
     module = ModuleType('mock_module')
-    module.attribute = 'test_value'
+    module.attribute = 'test_value'  # type: ignore[reportAttributeAccessIssue]
     return module
 
 

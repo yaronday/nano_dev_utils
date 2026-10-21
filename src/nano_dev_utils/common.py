@@ -135,8 +135,8 @@ class PredicateBuilder:
                     block_lits=block_lits,
                     block_patts=block_patts,
                 )
-            case _:
-                raise AssertionError(f"Unexpected flag state: {flag}")
+            case _:  # type: ignore[unreachable]
+                raise AssertionError(f"Unexpected flag state: {flag}")  # pragma: no cover
 
 
     @staticmethod

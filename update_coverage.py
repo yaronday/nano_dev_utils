@@ -8,6 +8,9 @@ full_output = result.stdout + result.stderr
 platform_ver = sys.platform
 py_ver = platform.python_version()
 
+
+coverage_filename = 'coverage.md'
+
 default_len = 80
 decor1 = '=' * 32
 h_line1 = f'{decor1} tests coverage {decor1}'
@@ -29,7 +32,7 @@ for line in lines:
         break
 
 content = '```text\n' + '\n'.join(formatted) + '\n```\n'
-with open('coverage.md', 'w', encoding='utf-8') as f:
+with open(coverage_filename, 'w', encoding='utf-8') as f:
     f.write(content)
 
-print('Coverage report successfully updated in coverage.md!')
+print(f'Coverage report successfully updated in {coverage_filename}!')

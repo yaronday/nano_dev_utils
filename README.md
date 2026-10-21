@@ -189,4 +189,4 @@ print(predicate("notes.txt"))       # True (matches allow pattern)
 print(predicate("secret_notes.txt"))  # False (block takes precedence)
 print(predicate("image.png"))       # False (not allowed)
 ```
-For detailed platform metrics, see the [Coverage Report](https://github.com/yaronday/nano_dev_utils/blob/main/coverage.md).
+For detailed platform metrics, see the [Coverage Report](https://github.com/yaronday/nano_dev_utils/blob/master/coverage.md).

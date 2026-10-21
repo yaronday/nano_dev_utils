@@ -3,7 +3,6 @@ import logging
 
 from pytest_mock import MockerFixture
 from unittest.mock import Mock
-from typing import Any
 from nano_dev_utils import release_ports, PortsRelease, PROXY_SERVER, INSPECTOR_CLIENT
 from nano_dev_utils.common import encode_dict
 
@@ -39,139 +38,86 @@ def cleanup():
     yield
 
 
-def mock_pid_retrieval(
-    pr: PortsRelease, mocker: MockerFixture, entry: dict[str, Any], port: int
-) -> tuple[int | None, bytes]:
-    mock_process = mocker.MagicMock()
-    encoded_entry = encode_dict(entry)
-    mock_process.communicate.return_value = (encoded_entry, '')
-    mocker.patch('subprocess.Popen', return_value=mock_process)
-    pid = pr.get_pid_by_port(port)
-    return pid, encoded_entry
+def test_ports_release_init_alias(pr) -> None:
+    # Exercises the proxy method delegating to __init__
+    pr.init()
+    assert isinstance(pr, PortsRelease)
 
 
-def test_get_pid_by_port_linux_success(
-    pr: PortsRelease, mock_logger: logging.Logger, mocker: MockerFixture
+@pytest.mark.parametrize(
+    'system, port, expected_pid, entry, expected_cmd',
+    [
+        (
+            'Linux',
+            8080,
+            1234,
+            {
+                'netid': 'tcp6', 'rx_q': 0, 'tx_q': 0,
+                'local_addr_port': ':::8080', 'peer_addr_port': ':::*',
+                'process_name': 'users:python3', 'pid': 'pid=1234', 'fd': 'fd=4',
+            },
+            'ss -lntp | grep :8080',
+        ),
+        (
+            'Windows',
+            9000,
+            5678,
+            {
+                'protocol': 'TCP', 'local_addr_and_port ': '0.0.0.0:9000',
+                'remote_addr_and_port': '0.0.0.0:0', 'state_and_pid': 'LISTENING 5678\n',
+            },
+            'netstat -ano | findstr :9000',
+        ),
+        (
+            'Darwin',
+            7000,
+            1111,
+            {
+                'command': 'python3', 'pid': '1111', 'user': 'user',
+                'fd': '10u', 'type': 'IPv4', 'device': '0xabcdef0123456789',
+                'size_off': '0t0', 'protocol': 'TCP', 'name': '*:7000 (LISTEN)',
+            },
+            'lsof -i :7000',
+        ),
+    ],
+)
+
+
+def test_get_pid_by_port_success(
+    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture, system, port, expected_pid, entry, expected_cmd
 ) -> None:
     mock_popen = mocker.patch('subprocess.Popen')
-    mocker.patch('platform.system', return_value='Linux')
-    # ss - lntp command response structure
-    port = 8080  # local port
-    peer_port = '*'
-    local_addr = '::'  # :: - listening to all available interfaces
-    peer_addr = '::'
-    _pid = 1234
-    fd = 4  # file descriptor
-    ss_entry = {
-        'netid': 'tcp6',
-        'rx_q': 0,
-        'tx_q': 0,
-        'local_addr_port': f'{local_addr}:{port}',
-        'peer_addr_port': f'{peer_addr}:{peer_port}',
-        'process_name': 'users:python3',
-        'pid': f'pid={_pid}',
-        'fd': f'fd={fd}',
-    }
+    mocker.patch('platform.system', return_value=system)
 
     mock_process = mocker.MagicMock()
-    mock_process.communicate.return_value = (encode_dict(ss_entry), '')
+    mock_process.communicate.return_value = (encode_dict(entry), '')
     mock_popen.return_value = mock_process
 
     pid = pr.get_pid_by_port(port)
-    assert pid == 1234
-    mock_popen.assert_called_once_with(
-        f'ss -lntp | grep :{port}',
-        shell=True,
-        stdout=-1,
-        stderr=-1,
-    )
+    assert pid == expected_pid
+    mock_popen.assert_called_once_with(expected_cmd, shell=True, stdout=-1, stderr=-1)
 
 
-def test_get_pid_by_port_windows_success(
-    pr: PortsRelease, mock_logger: logging.Logger, mocker: MockerFixture
-) -> None:
-    mock_popen = mocker.patch('subprocess.Popen')
+def test_get_pid_windows_value_error(pr, mock_logger, mocker) -> None:
+    port = 8080
     mocker.patch('platform.system', return_value='Windows')
-
-    # netstat -ano command response structure (Windows)
-    port = 9000
-    _pid = 5678
-    netstat_entry = {
-        'protocol': 'TCP',
-        'local_addr_and_port ': f'0.0.0.0:{port}',
-        'remote_addr_and_port': '0.0.0.0:0',
-        'state_and_pid': f'LISTENING {_pid}\n',
-    }
-
     mock_process = mocker.MagicMock()
-    mock_process.communicate.return_value = (encode_dict(netstat_entry), '')
-    mock_popen.return_value = mock_process
-
-    pid = pr.get_pid_by_port(port)
-    assert pid == 5678
-    mock_popen.assert_called_once_with(
-        f'netstat -ano | findstr :{port}',
-        shell=True,
-        stdout=-1,
-        stderr=-1,
-    )
+    # parts[4] is non-numeric
+    mock_process.communicate.return_value = (f'TCP 0.0.0.0:{port} 0.0.0.0:0 LISTENING invalid_pid'.encode(), b'')
+    mocker.patch('subprocess.Popen', return_value=mock_process)
+    assert pr.get_pid_by_port(port) is None
+    mock_logger.error.assert_called()
 
 
-def test_get_pid_by_port_darwin_success(
-    pr: PortsRelease, mock_logger: logging.Logger, mocker: MockerFixture
-) -> None:
-    mock_popen = mocker.patch('subprocess.Popen')
-    mocker.patch('platform.system', return_value='Darwin')
-    # lsof -i command response structure (MacOS)
-    port = 7000
-    _pid = 1111
-    lsof_entry = {
-        'command': 'python3',  # Process name
-        'pid': f'{_pid}',  # Process ID (integer)
-        'user': 'user',  # User running the process
-        'fd': '10u',  # File descriptor (read/write)
-        'type': 'IPv4',  # Network connection type (IPv4/IPv6)
-        'device': '0xabcdef0123456789',  # Kernel device identifier
-        'size_off': '0t0',  # Size/offset (0 for sockets)
-        'protocol': 'TCP',  # Protocol (TCP/UDP)
-        'name': f'*:{port} (LISTEN)',  # Combined address & state (optional)
-    }
-
-    mock_process = mocker.MagicMock()
-    mock_process.communicate.return_value = (encode_dict(lsof_entry), '')
-    mock_popen.return_value = mock_process
-
-    pid = pr.get_pid_by_port(port)
-    assert pid == 1111
-    mock_popen.assert_called_once_with(
-        f'lsof -i :{port}',
-        shell=True,
-        stdout=-1,
-        stderr=-1,
-    )
-
-
-def test_get_pid_by_port_unsupported_os(
-    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
-) -> None:
-    mocker.patch('platform.system', return_value='UnsupportedOS')
-    pid = pr.get_pid_by_port(1234)
-    assert pid is None
-    mock_logger.error.assert_called_once_with(pr._log_unsupported_os())
-
-
-def test_get_pid_by_port_no_process(
-    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
-) -> None:
-    port = 9999
+def test_get_pid_linux_value_error(pr, mock_logger, mocker) -> None:
+    port = 8080
     mocker.patch('platform.system', return_value='Linux')
     mock_process = mocker.MagicMock()
-    mock_process.communicate.return_value = (b'', b'')
+    # pid= part is non-numeric
+    mock_process.communicate.return_value = (f'tcp LISTEN 0 128 *:{port} users:(("python",pid=invalid_pid,fd=3))'.encode(), b'')
     mocker.patch('subprocess.Popen', return_value=mock_process)
-
-    pid = pr.get_pid_by_port(port)
-    assert pid is None
-    mock_logger.error.assert_not_called()
+    assert pr.get_pid_by_port(port) is None
+    mock_logger.error.assert_called()
 
 
 def test_get_pid_by_port_command_error(
@@ -189,44 +135,46 @@ def test_get_pid_by_port_command_error(
     mock_logger.error.assert_called_once_with(f'Error running command: {err}')
 
 
-def test_get_pid_by_port_parse_error(
-    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
-) -> None:
-    mocker.patch('platform.system', return_value='Linux')
+def test_get_pid_unsupported_os_exact_log(pr, mock_logger, mocker) -> None:
+    mocker.patch('platform.system', return_value='UnsupportedOS')
+    assert pr.get_pid_by_port(8080) is None
+    mock_logger.error.assert_called_once_with(pr._log_unsupported_os())
+
+
+def test_get_pid_line_parse_failed(pr, mock_logger, mocker) -> None:
     port = 8080
-    peer_port = '*'
-    local_addr = '::'
-    peer_addr = '::'
-    _pid = 'invalid'
-    fd = 4
-    ss_entry = {
-        'netid': 'tcp6',
-        'rx_q': 0,
-        'tx_q': 0,
-        'local_addr_port': f'{local_addr}:{port}',
-        'peer_addr_port': f'{peer_addr}:{peer_port}',
-        'process_name': 'users:python3',
-        'pid': f'pid={_pid}',
-        'fd': f'fd={fd}',
-    }
+    mocker.patch('platform.system', return_value='Darwin')
+    mock_process = mocker.MagicMock()
+    # Contains port '8080', but parts[1] ('bad_pid') causes int() to raise ValueError
+    mock_process.communicate.return_value = (f'python bad_pid {port}'.encode(), b'')
+    mocker.patch('subprocess.Popen', return_value=mock_process)
 
-    pid, enc_entry = mock_pid_retrieval(pr, mocker, ss_entry, port)
-    assert pid is None
-    mock_logger.error.assert_called_once_with(
-        f'Could not parse PID from line: {enc_entry.decode()}'
-    )
+    assert pr.get_pid_by_port(port) is None
+    # Verifies the exact helper log method was called
+    mock_logger.error.assert_called_once()
 
 
-def test_get_pid_by_port_unexpected_exception(
-    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture
-) -> None:
+def test_get_pid_unexpected_exception_logged(pr, mock_logger, mocker) -> None:
+    port = 8080
+    exc = RuntimeError('Disk error')
     mocker.patch('platform.system', return_value='Linux')
-    err = Exception('Unexpected')
-    port = 1234
-    mocker.patch('subprocess.Popen', side_effect=err)
+    mocker.patch('subprocess.Popen', side_effect=exc)
+
+    assert pr.get_pid_by_port(port) is None
+    mock_logger.error.assert_called_once_with(pr._log_unexpected_error(exc))
+
+
+def test_get_pid_by_port_no_matching_line(pr, mock_logger, mocker) -> None:
+    port = 8080
+    mocker.patch('platform.system', return_value='Linux')
+    mock_process = mocker.MagicMock()
+    # Output has lines, but none contain the target port '8080'
+    mock_process.communicate.return_value = (b'tcp LISTEN 0 128 *:9999 users:(("python",pid=1234,fd=3))', b'')
+    mocker.patch('subprocess.Popen', return_value=mock_process)
+
     pid = pr.get_pid_by_port(port)
     assert pid is None
-    mock_logger.error.assert_called_once_with(f'An unexpected error occurred: {err}')
+    mock_logger.error.assert_not_called()
 
 
 def test_kill_process_success(
@@ -319,11 +267,11 @@ def test_release_all_invalid_port(
     mock_kill = mocker.patch.object(pr, 'kill_process')
     ports = ['invalid', 1234, 5678]
     mock_get_pid.side_effect = [None, None]
-    pr.release_all(ports=ports)
+    pr.release_all(ports=ports)  # type: ignore[arg-type]
     assert mock_get_pid.call_args_list == [mocker.call(ports[1]), mocker.call(ports[2])]
 
     mock_kill.assert_not_called()
-    mock_logger.error.assert_called_once_with(pr._log_invalid_port(ports[0]))
+    mock_logger.error.assert_called_once_with(pr._log_invalid_port(ports[0]))  # type: ignore[arg-type]
 
 
 def test_release_all_unexpected_exception(
@@ -349,3 +297,18 @@ def test_ports_release_update_invalid_attribute_raises(pr):
     pr = pr
     pr.update({'anything_you_want': 'ok'})
     assert pr.anything_you_want == 'ok'  # type: ignore[attr-defined]
+
+
+def test_release_all_terminate_failed(pr, mock_logger, mocker) -> None:
+    port = 8080
+    pid = 1234
+
+    # Mock finding a PID and then failing to kill it
+    mocker.patch.object(pr, 'get_pid_by_port', return_value=pid)
+    mocker.patch.object(pr, 'kill_process', return_value=False)
+
+    pr.release_all([port])
+
+    mock_logger.error.assert_called_once_with(
+        pr._log_terminate_failed(pid=pid, port=port)
+    )

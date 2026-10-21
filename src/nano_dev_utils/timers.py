@@ -62,25 +62,22 @@ class Timer:
         A decorated function that behaves identically to the original, with timing logged.
         """
 
-        RP = ParamSpec('RP')
-        RR = TypeVar('RR')
-
         precision, verbose, printout = self.precision, self.verbose, self.printout
         check_timeout = self._check_timeout
         duration_formatter = self._duration_formatter
         format_timing_msg = self._format_timing_msg
 
         def decorator(
-            func: Callable[RP, RR] | Callable[RP, Awaitable[RR]],
-        ) -> Callable[RP, Any]:
+            func: Callable[P, R] | Callable[P, Awaitable[R]],
+        ) -> Callable[P, Any]:
             if inspect.iscoroutinefunction(func):
-                async_func = cast(Callable[RP, Awaitable[RR]], func)
+                async_func = cast(Callable[P, Awaitable[R]], func)
 
                 @wraps(func)
-                async def async_wrapper(*args: RP.args, **kwargs: RP.kwargs) -> RR:
+                async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                     func_name = func.__name__
                     total_elapsed_ns = 0
-                    result: RR | None = None
+                    result: R | None = None
                     for i in range(1, iterations + 1):
                         start_ns = time.perf_counter_ns()
                         result = await async_func(*args, **kwargs)
@@ -105,17 +102,17 @@ class Timer:
                     lgr.info(msg)
                     if printout:
                         print(msg)
-                    return cast(RR, result)
+                    return result
 
-                return cast(Callable[RP, Awaitable[RR]], async_wrapper)
+                return cast(Callable[P, Awaitable[R]], async_wrapper)
             else:
-                sync_func = cast(Callable[RP, RR], func)
+                sync_func = func
 
                 @wraps(func)
-                def sync_wrapper(*args: RP.args, **kwargs: RP.kwargs) -> RR:
+                def sync_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                     func_name = func.__name__
                     total_elapsed_ns = 0
-                    result: RR | None = None
+                    result: R | None = None
                     for i in range(1, iterations + 1):
                         start_ns = time.perf_counter_ns()
                         result = sync_func(*args, **kwargs)
@@ -138,9 +135,9 @@ class Timer:
                     lgr.info(msg)
                     if printout:
                         print(msg)
-                    return cast(RR, result)
+                    return result
 
-                return cast(Callable[RP, RR], sync_wrapper)
+                return sync_wrapper
 
         return decorator
 

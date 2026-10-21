@@ -23,7 +23,7 @@ def run_command(*args, **kwargs):
         display_cmd = ' '.join(str(arg) for arg in args)
 
     print(f'\n[Run] {display_cmd}')
-    
+
     try:
         return subprocess.run(*args, check=True, **kwargs)
     except subprocess.CalledProcessError as e:

@@ -99,7 +99,7 @@ class Timer:
                     lgr.info(msg)
                     if printout:
                         print(msg)
-                    return result
+                    return result  # type: ignore[reportReturnType]
 
                 return cast(Callable[P, Awaitable[R]], async_wrapper)
             else:
@@ -112,7 +112,7 @@ class Timer:
                     result: R | None = None
                     for i in range(1, iterations + 1):
                         start_ns = time.perf_counter_ns()
-                        result = sync_func(*args, **kwargs)
+                        result = sync_func(*args, **kwargs)  # type: ignore[reportAssignmentType]
                         duration_ns = time.perf_counter_ns() - start_ns
                         total_elapsed_ns += duration_ns
                         check_timeout(
@@ -132,7 +132,7 @@ class Timer:
                     lgr.info(msg)
                     if printout:
                         print(msg)
-                    return result
+                    return result  # type: ignore[reportReturnType]
 
                 return sync_wrapper
 

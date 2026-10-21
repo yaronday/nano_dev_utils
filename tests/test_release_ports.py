@@ -53,9 +53,14 @@ def test_ports_release_init_alias(pr) -> None:
             8080,
             1234,
             {
-                'netid': 'tcp6', 'rx_q': 0, 'tx_q': 0,
-                'local_addr_port': ':::8080', 'peer_addr_port': ':::*',
-                'process_name': 'users:python3', 'pid': 'pid=1234', 'fd': 'fd=4',
+                'netid': 'tcp6',
+                'rx_q': 0,
+                'tx_q': 0,
+                'local_addr_port': ':::8080',
+                'peer_addr_port': ':::*',
+                'process_name': 'users:python3',
+                'pid': 'pid=1234',
+                'fd': 'fd=4',
             },
             'ss -lntp | grep :8080',
         ),
@@ -64,8 +69,10 @@ def test_ports_release_init_alias(pr) -> None:
             9000,
             5678,
             {
-                'protocol': 'TCP', 'local_addr_and_port ': '0.0.0.0:9000',
-                'remote_addr_and_port': '0.0.0.0:0', 'state_and_pid': 'LISTENING 5678\n',
+                'protocol': 'TCP',
+                'local_addr_and_port ': '0.0.0.0:9000',
+                'remote_addr_and_port': '0.0.0.0:0',
+                'state_and_pid': 'LISTENING 5678\n',
             },
             'netstat -ano | findstr :9000',
         ),
@@ -74,18 +81,29 @@ def test_ports_release_init_alias(pr) -> None:
             7000,
             1111,
             {
-                'command': 'python3', 'pid': '1111', 'user': 'user',
-                'fd': '10u', 'type': 'IPv4', 'device': '0xabcdef0123456789',
-                'size_off': '0t0', 'protocol': 'TCP', 'name': '*:7000 (LISTEN)',
+                'command': 'python3',
+                'pid': '1111',
+                'user': 'user',
+                'fd': '10u',
+                'type': 'IPv4',
+                'device': '0xabcdef0123456789',
+                'size_off': '0t0',
+                'protocol': 'TCP',
+                'name': '*:7000 (LISTEN)',
             },
             'lsof -i :7000',
         ),
     ],
 )
-
-
 def test_get_pid_by_port_success(
-    pr: PortsRelease, mock_logger: Mock, mocker: MockerFixture, system, port, expected_pid, entry, expected_cmd
+    pr: PortsRelease,
+    mock_logger: Mock,
+    mocker: MockerFixture,
+    system,
+    port,
+    expected_pid,
+    entry,
+    expected_cmd,
 ) -> None:
     mock_popen = mocker.patch('subprocess.Popen')
     mocker.patch('platform.system', return_value=system)
@@ -104,7 +122,10 @@ def test_get_pid_windows_value_error(pr, mock_logger, mocker) -> None:
     mocker.patch('platform.system', return_value='Windows')
     mock_process = mocker.MagicMock()
     # parts[4] is non-numeric
-    mock_process.communicate.return_value = (f'TCP 0.0.0.0:{port} 0.0.0.0:0 LISTENING invalid_pid'.encode(), b'')
+    mock_process.communicate.return_value = (
+        f'TCP 0.0.0.0:{port} 0.0.0.0:0 LISTENING invalid_pid'.encode(),
+        b'',
+    )
     mocker.patch('subprocess.Popen', return_value=mock_process)
     assert pr.get_pid_by_port(port) is None
     mock_logger.error.assert_called()
@@ -115,7 +136,10 @@ def test_get_pid_linux_value_error(pr, mock_logger, mocker) -> None:
     mocker.patch('platform.system', return_value='Linux')
     mock_process = mocker.MagicMock()
     # pid= part is non-numeric
-    mock_process.communicate.return_value = (f'tcp LISTEN 0 128 *:{port} users:(("python",pid=invalid_pid,fd=3))'.encode(), b'')
+    mock_process.communicate.return_value = (
+        f'tcp LISTEN 0 128 *:{port} users:(("python",pid=invalid_pid,fd=3))'.encode(),
+        b'',
+    )
     mocker.patch('subprocess.Popen', return_value=mock_process)
     assert pr.get_pid_by_port(port) is None
     mock_logger.error.assert_called()
@@ -170,7 +194,10 @@ def test_get_pid_by_port_no_matching_line(pr, mock_logger, mocker) -> None:
     mocker.patch('platform.system', return_value='Linux')
     mock_process = mocker.MagicMock()
     # Output has lines, but none contain the target port '8080'
-    mock_process.communicate.return_value = (b'tcp LISTEN 0 128 *:9999 users:(("python",pid=1234,fd=3))', b'')
+    mock_process.communicate.return_value = (
+        b'tcp LISTEN 0 128 *:9999 users:(("python",pid=1234,fd=3))',
+        b'',
+    )
     mocker.patch('subprocess.Popen', return_value=mock_process)
 
     pid = pr.get_pid_by_port(port)
@@ -288,14 +315,12 @@ def test_release_all_unexpected_exception(
 
 
 def test_ports_release_update_sets_attributes(pr):
-    pr = pr
     pr.update({'foo': 123, 'bar': 'baz'})
     assert pr.foo == 123  # type: ignore[attr-defined]
     assert pr.bar == 'baz'  # type: ignore[attr-defined]
 
 
 def test_ports_release_update_invalid_attribute_raises(pr):
-    pr = pr
     pr.update({'anything_you_want': 'ok'})
     assert pr.anything_you_want == 'ok'  # type: ignore[attr-defined]
 

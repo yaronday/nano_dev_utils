@@ -3,17 +3,14 @@
 from common import run_command
 
 
-def main():	
-	commands  = [
-		"uv venv",
-		"uv pip install -e .",
-		"uv sync"
-	]
-	
-	for cmd in commands:
-		run_command(cmd, shell=True)
+def main():
+    commands = ['uv venv', 'uv pip install -e .', 'uv sync']
 
-	print("\nAll environment setup steps completed successfully!")
+    for cmd in commands:
+        run_command(cmd, shell=True)
 
-if __name__ == "__main__":
-	main()
+    print('\nAll environment setup steps completed successfully!')
+
+
+if __name__ == '__main__':
+    main()

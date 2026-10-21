@@ -1,10 +1,11 @@
 """Update test coverage table"""
 
 import platform
+import sys
 
 from common import run_command
 
-result = run_command(["coverage", "report"], capture_output=True, text=True)
+result = run_command(['coverage', 'report'], capture_output=True, text=True)
 full_output = result.stdout + result.stderr
 
 platform_ver = sys.platform

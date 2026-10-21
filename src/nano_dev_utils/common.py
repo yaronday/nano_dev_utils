@@ -132,8 +132,9 @@ class PredicateBuilder:
                     block_patts=block_patts,
                 )
             case _:  # type: ignore[unreachable]
-                raise AssertionError(f"Unexpected flag state: {flag}")  # pragma: no cover
-
+                raise AssertionError(
+                    f'Unexpected flag state: {flag}'
+                )  # pragma: no cover
 
     @staticmethod
     def compile_patts(fs: FilterSet) -> tuple[set[str], list[re.Pattern]]:

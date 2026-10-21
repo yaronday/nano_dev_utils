@@ -1,12 +1,12 @@
-import pytest
-import logging
 import builtins
+import logging
+from collections.abc import Callable, Generator
+from unittest.mock import AsyncMock, Mock, patch
 
+import pytest
 from pytest_mock import MockerFixture
-from unittest.mock import patch, Mock, AsyncMock
-from typing import Callable, Generator
 
-from nano_dev_utils import timers, timer
+from nano_dev_utils import timer, timers
 from nano_dev_utils.timers import Timer
 
 

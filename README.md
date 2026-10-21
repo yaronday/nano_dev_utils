@@ -3,6 +3,10 @@
 A collection of small Python utilities for developers.
 [PYPI package: nano-dev-utils](https://pypi.org/project/nano-dev-utils)
 
+[![Coverage Status](https://img.shields.io/badge/coverage-99%25-brightgreen.svg)](coverage.md)
+
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 ## Modules
 
 ### `timers.py`
@@ -158,7 +162,31 @@ custom_ports_releaser.release_all(ports=[8080, 9000])
 ports_release.release_all()
 ```
 
+### PredicateBuilder
 
-## License
-This project is licensed under the MIT License. 
-See [LICENSE](https://github.com/yaronday/nano_dev_utils/blob/master/LICENSE) for details.
+`PredicateBuilder` (located in `common.py`) provides a high-performance, memory-efficient way to generate boolean filter predicates based on `allow` and `block` filter sets. 
+
+### Features
+* **Explicit Precedence:** Block rules always take precedence over allow rules.
+* **Smart Matching:** Automatically distinguishes between exact string literals and wildcard patterns (`*`, `?`, `[...]`).
+* **Case-Insensitive:** Handles case-folded literal matching and case-insensitive regex pattern matching.
+* **Optimized Evaluation:** Pre-compiles patterns and selects the optimal closure strategy based on the provided filter sets to maximize runtime performance.
+
+### Usage Example
+
+```python
+from nano_dev_utils.common import PredicateBuilder
+
+builder = PredicateBuilder()
+
+# Example 1: Allow specific patterns, block specific files
+allow_set = ["*.txt", "report.pdf"]
+block_set = ["secret_*.txt"]
+
+predicate = builder.build_predicate(allow=allow_set, block=block_set)
+
+print(predicate("notes.txt"))       # True (matches allow pattern)
+print(predicate("secret_notes.txt"))  # False (block takes precedence)
+print(predicate("image.png"))       # False (not allowed)
+```
+For detailed platform metrics, see the [Coverage Report](https://github.com/yaronday/nano_dev_utils/blob/master/coverage.md).

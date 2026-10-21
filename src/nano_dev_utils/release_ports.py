@@ -1,9 +1,8 @@
+import logging
 import platform
 import subprocess
-import logging
 
 from .common import update
-
 
 lgr = logging.getLogger(__name__)
 """Module-level logger. Configure using logging.basicConfig() in your application."""
@@ -115,7 +114,7 @@ class PortsRelease:
                             lgr.error(self._log_line_parse_failed(line))
                             return None
             return None
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             lgr.error(self._log_unexpected_error(e))
             return None
 
@@ -137,7 +136,7 @@ class PortsRelease:
                 lgr.error(self._log_terminate_failed(pid=pid, error=error_msg))
                 return False
             return True
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             lgr.error(self._log_unexpected_error(e))
             return False
 
@@ -160,5 +159,5 @@ class PortsRelease:
                     lgr.info(self._log_process_terminated(pid, port))
                 else:
                     lgr.error(self._log_terminate_failed(pid=pid, port=port))
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             lgr.error(self._log_unexpected_error(e))

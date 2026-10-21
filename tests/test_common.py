@@ -1,14 +1,21 @@
-import pytest
+import json
 import os
 import tempfile
-
-from pytest import MonkeyPatch
-from types import SimpleNamespace
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator, AnyStr
+from types import SimpleNamespace
+from typing import AnyStr
 
+import pytest
+from pytest import MonkeyPatch
 
-from nano_dev_utils.common import encode_dict, update, str2file
+from nano_dev_utils.common import (
+    PredicateBuilder,
+    encode_dict,
+    load_cfg_file,
+    str2file,
+    update,
+)
 
 
 @pytest.fixture
@@ -19,6 +26,11 @@ def temp_file() -> Generator[str, None, None]:
     yield path
     if os.path.exists(path):
         os.unlink(path)
+
+
+@pytest.fixture
+def builder():
+    return PredicateBuilder()
 
 
 def test_encode_dict_basic() -> None:
@@ -191,3 +203,151 @@ def test_str2file_creates_nested_dirs(tmp_path: str):
     str2file(content, str(temp_file))
     assert temp_file.exists()
     assert temp_file.read_text(encoding='utf-8') == content
+
+
+class TestCompilePatts:
+    @pytest.mark.parametrize(
+        'fs,expected_lits,expected_patt_count',
+        [
+            ([], set(), 0),
+            (None, set(), 0),
+            (['foo', 'bar'], {'foo', 'bar'}, 0),
+            (['FILE_*.txt', 'data?.csv'], set(), 2),
+            (['exact', 'wild*card'], {'exact'}, 1),
+        ],
+    )
+    def an_empty_or_varied_filter_set(
+        self, builder, fs, expected_lits, expected_patt_count
+    ):
+        literals, patterns = builder.compile_patts(fs)
+        assert literals == expected_lits
+        assert len(patterns) == expected_patt_count
+
+
+class TestPredicateBuilderMatrix:
+    # State (0, 0): No allow, no block -> Allow everything
+    def test_no_filters_allows_all(self, builder):
+        predicate = builder.build_predicate([], [])
+        assert predicate('anything.txt') is True
+        assert predicate('FOO') is True
+
+    # State (0, 1): No allow, has block -> Block matches, allow rest
+    @pytest.mark.parametrize(
+        'name,expected',
+        [
+            ('secret.txt', False),
+            ('temp.log', False),
+            ('public.txt', True),
+        ],
+    )
+    def test_block_only_predicate(self, builder, name, expected):
+        block_set = ['secret.txt', '*.log']
+        predicate = builder.build_predicate([], block_set)
+        assert predicate(name) == expected
+
+    # State (1, 0): Has allow, no block -> Allow matches, block rest
+    @pytest.mark.parametrize(
+        'name,expected',
+        [
+            ('report.pdf', True),
+            ('data.csv', True),
+            ('other.txt', False),
+        ],
+    )
+    def test_allow_only_predicate(self, builder, name, expected):
+        allow_set = ['report.pdf', 'data.*']
+        predicate = builder.build_predicate(allow_set, [])
+        assert predicate(name) == expected
+
+    # State (1, 1): Has allow, has block -> Block takes precedence
+    @pytest.mark.parametrize(
+        'name, expected',
+        [
+            ('allowed.txt', True),
+            ('blocked_allowed.txt', False),  # Matches both allow & block -> blocked
+            ('random.log', False),  # Matches neither -> falls through to False
+        ],
+    )
+    def test_allow_and_block_with_precedence(self, builder, name, expected):
+        allow_set = ['*.txt']
+        block_set = ['blocked_allowed.txt']
+        predicate = builder.build_predicate(allow_set, block_set)
+        assert predicate(name) == expected
+
+
+class TestWildcardsAndCaseInsensitivity:
+    @pytest.mark.parametrize(
+        'pattern,target,expected',
+        [
+            ('file_?.txt', 'file_1.txt', True),
+            ('file_?.txt', 'file_12.txt', False),
+            ('data[0-9].csv', 'data5.csv', True),
+            ('data[0-9].csv', 'dataX.csv', False),
+        ],
+    )
+    def test_complex_wildcards(self, builder, pattern, target, expected):
+        predicate = builder.build_predicate([pattern], [])
+        assert predicate(target) == expected
+
+    def test_case_insensitivity_handling(self, builder):
+        allow_set = ['Important-File.TXT']
+        block_set = ['EXCLUDE-ME.log']
+
+        predicate = builder.build_predicate(allow_set, block_set)
+
+        # Test casefolded literal matches
+        assert predicate('important-file.txt') is True
+        assert predicate('IMPORTANT-FILE.TXT') is True
+
+        # Test block case-insensitivity precedence
+        predicate_with_block = builder.build_predicate(['*.log'], ['exclude-me.log'])
+        assert predicate_with_block('EXCLUDE-ME.LOG') is False
+
+
+@pytest.mark.parametrize('path_input', [None, ''])
+def test_load_cfg_file_empty_path(path_input):
+    """Test that a missing or empty path returns an empty dictionary."""
+    assert load_cfg_file(path_input) == {}
+
+
+def test_load_cfg_file_not_found(tmp_path):
+    """Test that a non-existent file path triggers a system exit."""
+    missing_file = tmp_path / 'missing.json'
+
+    with pytest.raises(SystemExit) as exc_info:
+        load_cfg_file(str(missing_file))
+
+    assert 'not found' in str(exc_info.value)
+
+
+def test_load_cfg_file_invalid_extension(tmp_path):
+    """Test that non-json files trigger a system exit."""
+    txt_file = tmp_path / 'config.txt'
+    txt_file.write_text('key = value', encoding='utf-8')
+
+    with pytest.raises(SystemExit) as exc_info:
+        load_cfg_file(str(txt_file))
+
+    assert 'must .json' in str(exc_info.value)
+
+
+def test_load_cfg_file_invalid_json_content(tmp_path):
+    """Test that malformed JSON triggers a system exit during parsing."""
+    json_file = tmp_path / 'config.json'
+    json_file.write_text('{ malformed json ...', encoding='utf-8')
+
+    with pytest.raises(SystemExit) as exc_info:
+        load_cfg_file(str(json_file))
+
+    assert 'Error reading config file' in str(exc_info.value)
+
+
+def test_load_cfg_file_success(tmp_path):
+    """Test successful loading and parsing of a valid JSON config file."""
+    json_file = tmp_path / 'config.json'
+    expected_data = {'host': 'localhost', 'port': 5432, 'debug': True}
+    json_file.write_text(json.dumps(expected_data), encoding='utf-8')
+
+    result = load_cfg_file(str(json_file))
+
+    assert result == expected_data

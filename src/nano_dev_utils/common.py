@@ -1,14 +1,10 @@
 import fnmatch
+import json
 import re
 import sys
-import json
-
-from pathlib import Path
-from typing import AnyStr, Any
-
 from collections.abc import Callable
-from typing import TypeAlias
-
+from pathlib import Path
+from typing import Any, AnyStr, TypeAlias
 
 FilterSet: TypeAlias = list[str] | set[str] | None
 
@@ -135,9 +131,10 @@ class PredicateBuilder:
                     block_lits=block_lits,
                     block_patts=block_patts,
                 )
-            case _:
-                return lambda name: False
-
+            case _:  # type: ignore[unreachable]
+                raise AssertionError(
+                    f'Unexpected flag state: {flag}'
+                )  # pragma: no cover
 
     @staticmethod
     def compile_patts(fs: FilterSet) -> tuple[set[str], list[re.Pattern]]:
@@ -178,11 +175,10 @@ class PredicateBuilder:
         block_patts: list[re.Pattern],
     ) -> bool:
         """Return True if name is allowed and not blocked (block takes precedence)."""
-        if name in block_lits or self._match_patts(name, block_patts):
+        name_folded = name.casefold()
+        if name_folded in block_lits or self._match_patts(name, block_patts):
             return False
-        if name in allow_lits or self._match_patts(name, allow_patts):
-            return True
-        return False
+        return name_folded in allow_lits or self._match_patts(name, allow_patts)
 
 
 def load_cfg_file(path: str | None = None) -> dict[str, Any]:
@@ -198,5 +194,5 @@ def load_cfg_file(path: str | None = None) -> dict[str, Any]:
                 return json.load(f)
         else:
             sys.exit('Error: config file must .json')
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         sys.exit(f'Error reading config file: {e}')

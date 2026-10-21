@@ -1,11 +1,11 @@
-import threading
-import pytest
 import re
-
-from pytest_mock import MockerFixture
+import threading
 from unittest.mock import Mock
 
-from nano_dev_utils.timers import Timer, NS_IN_SEC, NS_IN_MS, NS_IN_US
+import pytest
+from pytest_mock import MockerFixture
+
+from nano_dev_utils.timers import NS_IN_MS, NS_IN_SEC, NS_IN_US, Timer
 
 SIM_COMPLETE_TIME = 'Function completed in simulated'
 
@@ -22,7 +22,7 @@ def test_initialization(timer_mock) -> None:
 def test_timeit_simple(
     timer_mock: Timer, mock_logger: Mock, mock_print: Mock, mocker: MockerFixture
 ) -> None:
-    mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, int(923_470)])
+    mock_time = mocker.patch('time.perf_counter_ns', side_effect=[0, 923_470])
     expected = 'sample_function took 923.47 μs'
     timer_mock.init(precision=2, printout=True)
 
@@ -197,7 +197,6 @@ def test_function_metadata_preserved(timer_mock: Timer) -> None:
     @timer_mock.timeit()
     def dummy_func():
         """Test docstring"""
-        pass
 
     assert dummy_func.__name__ == 'dummy_func'
     assert dummy_func.__doc__ == 'Test docstring'

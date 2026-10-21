@@ -1,7 +1,7 @@
+import importlib
 from types import ModuleType
 from typing import Any
 
-import importlib
 from nano_dev_utils.common import update
 
 

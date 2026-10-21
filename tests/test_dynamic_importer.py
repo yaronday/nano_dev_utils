@@ -1,5 +1,7 @@
-import pytest
 from types import ModuleType
+
+import pytest
+
 from nano_dev_utils.dynamic_importer import Importer
 
 
@@ -11,7 +13,7 @@ def importer():
 @pytest.fixture
 def mock_module():
     module = ModuleType('mock_module')
-    setattr(module, 'attribute', 'test_value')
+    module.attribute = 'test_value'  # type: ignore[reportAttributeAccessIssue]
     return module
 
 
@@ -60,3 +62,12 @@ def test_import_mod_from_lib_returns_any(importer, mocker):
     assert result == mock_object
     assert 'some_object' in importer.imported_modules
     assert importer.imported_modules['some_object'] == mock_object
+
+
+def test_importer_update_integration():
+    importer = Importer()
+    attrs = {'custom_attribute': 'test_data'}
+
+    importer.update(attrs)
+
+    assert getattr(importer, 'custom_attribute') == 'test_data'

@@ -1,11 +1,12 @@
-import pytest
 import asyncio
 import re
+from unittest.mock import AsyncMock, Mock
 
+import pytest
 from pytest_mock import MockerFixture
-from unittest.mock import Mock, AsyncMock
 
 from nano_dev_utils.timers import Timer
+
 from .conftest import assert_called_w_substr
 
 

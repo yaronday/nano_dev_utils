@@ -1,9 +1,8 @@
+import logging
 import platform
 import subprocess
-import logging
 
 from .common import update
-
 
 lgr = logging.getLogger(__name__)
 """Module-level logger. Configure using logging.basicConfig() in your application."""

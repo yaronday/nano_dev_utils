@@ -1,15 +1,21 @@
-import pytest
+import json
 import os
 import tempfile
-import json
-
-from pytest import MonkeyPatch
-from types import SimpleNamespace
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator, AnyStr
+from types import SimpleNamespace
+from typing import AnyStr
 
+import pytest
+from pytest import MonkeyPatch
 
-from nano_dev_utils.common import encode_dict, update, str2file, PredicateBuilder, load_cfg_file
+from nano_dev_utils.common import (
+    PredicateBuilder,
+    encode_dict,
+    load_cfg_file,
+    str2file,
+    update,
+)
 
 
 @pytest.fixture

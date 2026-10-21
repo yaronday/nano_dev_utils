@@ -1,5 +1,7 @@
-import pytest
 from types import ModuleType
+
+import pytest
+
 from nano_dev_utils.dynamic_importer import Importer
 
 
@@ -11,7 +13,7 @@ def importer():
 @pytest.fixture
 def mock_module():
     module = ModuleType('mock_module')
-    setattr(module, 'attribute', 'test_value')
+    module.attribute = 'test_value'
     return module
 
 

@@ -1,9 +1,10 @@
-import pytest
 import logging
-
-from pytest_mock import MockerFixture
 from unittest.mock import Mock
-from nano_dev_utils import release_ports, PortsRelease, PROXY_SERVER, INSPECTOR_CLIENT
+
+import pytest
+from pytest_mock import MockerFixture
+
+from nano_dev_utils import INSPECTOR_CLIENT, PROXY_SERVER, PortsRelease, release_ports
 from nano_dev_utils.common import encode_dict
 
 

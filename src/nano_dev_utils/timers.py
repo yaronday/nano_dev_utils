@@ -1,19 +1,16 @@
-from functools import wraps
-import time
-import logging
 import inspect
-
+import logging
+import time
+from collections.abc import Awaitable, Callable
+from functools import wraps
 from typing import (
-    TypeVar,
-    ParamSpec,
-    Callable,
-    Awaitable,
     Any,
+    ParamSpec,
+    TypeVar,
     cast,
 )
 
 from nano_dev_utils.common import update
-
 
 lgr = logging.getLogger(__name__)
 """Module-level logger. Configure using logging.basicConfig() in your application."""

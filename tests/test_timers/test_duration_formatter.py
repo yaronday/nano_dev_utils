@@ -1,7 +1,8 @@
-import pytest
 from unittest.mock import Mock
 
-from nano_dev_utils.timers import NS_IN_US, NS_IN_MS, NS_IN_SEC, NS_IN_MIN, NS_IN_HOUR
+import pytest
+
+from nano_dev_utils.timers import NS_IN_HOUR, NS_IN_MIN, NS_IN_MS, NS_IN_SEC, NS_IN_US
 
 
 def test_nanoseconds_whole_number(res_form_mock) -> None:

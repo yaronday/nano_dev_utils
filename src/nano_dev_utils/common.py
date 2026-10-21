@@ -1,14 +1,10 @@
 import fnmatch
+import json
 import re
 import sys
-import json
-
-from pathlib import Path
-from typing import AnyStr, Any
-
 from collections.abc import Callable
-from typing import TypeAlias
-
+from pathlib import Path
+from typing import Any, AnyStr, TypeAlias
 
 FilterSet: TypeAlias = list[str] | set[str] | None
 

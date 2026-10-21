@@ -25,7 +25,7 @@ def run_command(*args, **kwargs):
     print(f'\n[Run] {display_cmd}')
 
     try:
-        return subprocess.run(*args, check=True, **kwargs)
+        return subprocess.run(*args, **kwargs)
     except subprocess.CalledProcessError as e:
         print(f'[Error] Command failed with exit code {e.returncode}')
         if kwargs.get('capture_output') and e.stderr:

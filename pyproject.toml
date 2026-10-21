@@ -33,11 +33,12 @@ addopts = "--cov=nano_dev_utils --cov-report=term-missing"
 dev = [
     "build>=1.6.1",
     "twine>=7.0.0",
+    "pre-commit>=4.7.0",
 ]
 test = [
-    "pytest>=9.1.1",
-    "pytest-mock>=3.17.0",
-    "pytest-asyncio>=1.4.0",
+    "pytest",
+    "pytest-mock",
+    "pytest-asyncio",
     "pytest-cov",
 ]
 

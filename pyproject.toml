@@ -38,7 +38,7 @@ dev = [
     "twine>=7.0.0",
     "pre-commit>=4.7.0",
     "ruff",
-    "pyright"
+    "pyright",
 ]
 
 test = [

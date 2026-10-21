@@ -29,6 +29,9 @@ default-groups = ["dev", "test"]
 pythonpath = ["src"]
 addopts = "--cov=nano_dev_utils --cov-report=term-missing"
 
+[tool.coverage.report]
+show_missing = true
+
 [dependency-groups]
 dev = [
     "build>=1.6.1",

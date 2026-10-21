@@ -22,12 +22,14 @@ Homepage = "https://github.com/yaronday/nano_utils"
 Issues = "https://github.com/yaronday/nano_utils/issues"
 license = "https://github.com/yaronday/nano_dev_utils/blob/master/LICENSE"
 
+[tool.uv]
+default-groups = ["dev", "test"]
+
 [dependency-groups]
 dev = [
     "build>=1.6.1",
     "twine>=7.0.0",
 ]
-
 test = [
     "pytest>=9.1.1",
     "pytest-mock>=3.17.0",

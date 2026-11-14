@@ -9,6 +9,15 @@ class Importer:
     def __init__(self):
         self.imported_modules = {}
 
+    def __getattr__(self, name: str) -> Any:
+        """Support dynamically assigned attributes."""
+        try:
+            return self.__dict__[name]
+        except KeyError:
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'"
+            ) from None
+
     def update(self, attrs: dict) -> None:
         update(self, attrs)
 

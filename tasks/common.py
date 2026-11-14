@@ -11,7 +11,6 @@ def run_command(*args, **kwargs):
     """Run a subprocess command safely inside the project root."""
     # Default to project root context and fail-fast behavior
     kwargs.setdefault('cwd', PRJ_ROOT)
-    kwargs.setdefault('check', True)
 
     # Format the command for clean logging output
     cmd_arg = args[0] if args else None
@@ -25,7 +24,7 @@ def run_command(*args, **kwargs):
     print(f'\n[Run] {display_cmd}')
 
     try:
-        return subprocess.run(*args, **kwargs)
+        return subprocess.run(*args, check=True, **kwargs)
     except subprocess.CalledProcessError as e:
         print(f'[Error] Command failed with exit code {e.returncode}')
         if kwargs.get('capture_output') and e.stderr:

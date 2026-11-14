@@ -51,8 +51,10 @@ from nano_dev_utils import timer
 logging.basicConfig(filename='timer example.log',
                     level=logging.INFO,  # DEBUG, WARNING, ERROR, CRITICAL
                     format='%(asctime)s - %(levelname)s: %(message)s',
-                    datefmt='%d-%m-%Y %H:%M:%S')
-
+                    datefmt='%d-%m-%Y %H:%M:%S', 
+                    encoding='utf-8')
+                   
+                        
 # Basic timing
 @timer.timeit()
 def my_function(a, b=10):

@@ -70,4 +70,21 @@ def test_importer_update_integration():
 
     importer.update(attrs)
 
-    assert getattr(importer, 'custom_attribute') == 'test_data'
+    assert importer.custom_attribute == 'test_data'
+
+
+def test_importer_missing_attribute_raises_attribute_error():
+    importer = Importer()
+
+    with pytest.raises(AttributeError, match='nonexistent'):
+        _ = importer.nonexistent
+
+
+def test_importer_dynamic_attributes_do_not_break_existing_api():
+    importer = Importer()
+
+    importer.update({'custom_attribute': 'test_data'})
+
+    assert isinstance(importer.imported_modules, dict)
+    assert callable(importer.update)
+    assert importer.custom_attribute == 'test_data'
